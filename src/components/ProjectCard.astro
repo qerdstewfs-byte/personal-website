@@ -1,0 +1,60 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  tags: string[];
+  status: string;
+  href: string;
+  disabled?: boolean;
+}
+
+const { title, description, tags, status, href, disabled = true } = Astro.props;
+---
+
+<article class="flex h-full flex-col rounded-lg border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+  <div class="flex flex-1 flex-col gap-4">
+    <div class="space-y-2">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <h3 class="text-xl font-semibold text-zinc-950 dark:text-zinc-50">{title}</h3>
+        <span class="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+          {status}
+        </span>
+      </div>
+      <p class="leading-7 text-zinc-600 dark:text-zinc-300">{description}</p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      {
+        tags.map((tag) => (
+          <span class="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+            {tag}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+    {
+      disabled ? (
+        <div class="space-y-2">
+          <button
+            class="cursor-not-allowed rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+            disabled
+            type="button"
+          >
+            详情待补充
+          </button>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">预留路径：{href}</p>
+        </div>
+      ) : (
+        <a
+          href={href}
+          class="inline-flex rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white no-underline hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+        >
+          查看详情
+        </a>
+      )
+    }
+  </div>
+</article>

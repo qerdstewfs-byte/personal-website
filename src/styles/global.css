@@ -1,20 +1,196 @@
 @import "tailwindcss";
 @config "../../tailwind.config.mjs";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
     color-scheme: light;
+    --color-page: 248 250 252;
+    --color-surface: 255 255 255;
+    --color-surface-muted: 241 245 249;
+    --color-border: 203 213 225;
+    --color-text: 15 23 42;
+    --color-muted: 71 85 105;
+    --color-soft: 100 116 139;
+    --color-accent: 8 145 178;
+    --shadow-soft: 0 24px 70px rgb(15 23 42 / 0.08);
   }
 
   .dark {
     color-scheme: dark;
+    --color-page: 2 6 23;
+    --color-surface: 15 23 42;
+    --color-surface-muted: 30 41 59;
+    --color-border: 51 65 85;
+    --color-text: 226 232 240;
+    --color-muted: 148 163 184;
+    --color-soft: 100 116 139;
+    --color-accent: 34 211 238;
+    --shadow-soft: 0 24px 70px rgb(0 0 0 / 0.28);
+  }
+
+  html {
+    @apply bg-[rgb(var(--color-page))];
   }
 
   body {
-    @apply min-h-screen bg-white text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50;
+    @apply min-h-screen bg-[rgb(var(--color-page))] text-[rgb(var(--color-text))] antialiased;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
   }
 
   a {
-    @apply text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100;
+    @apply text-inherit underline-offset-4;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-cyan-600 dark:outline-cyan-300;
+  }
+}
+
+@layer components {
+  .site-shell {
+    @apply mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 sm:px-6 lg:px-8;
+  }
+
+  .site-main {
+    @apply flex-1 py-12 sm:py-16 lg:py-20;
+  }
+
+  .site-main > :where(section, article, div) {
+    @apply max-w-4xl;
+  }
+
+  .site-header {
+    @apply sticky top-0 z-40 -mx-5 border-b border-[rgb(var(--color-border)/0.68)] bg-[rgb(var(--color-page)/0.88)] px-5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8;
+  }
+
+  .site-header__inner {
+    @apply mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 py-4 lg:grid-cols-[auto_1fr_auto];
+  }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-5 focus:top-5 focus:z-50 focus:rounded-md focus:bg-[rgb(var(--color-text))] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[rgb(var(--color-page))];
+  }
+
+  .brand {
+    @apply inline-flex items-center gap-3 no-underline;
+  }
+
+  .brand__mark {
+    @apply grid size-10 shrink-0 place-items-center rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] text-sm font-semibold text-[rgb(var(--color-accent))] shadow-sm;
+  }
+
+  .brand__text {
+    @apply grid gap-0.5;
+  }
+
+  .brand__name {
+    @apply text-base font-semibold leading-tight tracking-normal;
+  }
+
+  .brand__meta {
+    @apply text-xs font-medium uppercase text-[rgb(var(--color-soft))];
+  }
+
+  .site-header__actions {
+    @apply flex items-center gap-2 lg:order-3;
+  }
+
+  .primary-nav {
+    @apply col-span-2 hidden flex-col gap-1 rounded-lg border border-[rgb(var(--color-border)/0.72)] bg-[rgb(var(--color-surface))] p-2 shadow-[var(--shadow-soft)] lg:col-span-1 lg:ml-auto lg:flex lg:flex-row lg:items-center lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none;
+  }
+
+  .primary-nav[data-open] {
+    @apply flex;
+  }
+
+  .primary-nav__link {
+    @apply rounded-md px-3 py-2 text-sm font-medium text-[rgb(var(--color-muted))] no-underline transition-colors hover:bg-[rgb(var(--color-surface-muted))] hover:text-[rgb(var(--color-text))];
+  }
+
+  .primary-nav__link--active {
+    @apply bg-[rgb(var(--color-surface-muted))] text-[rgb(var(--color-text))];
+  }
+
+  .menu-toggle,
+  .theme-toggle {
+    @apply grid size-10 place-items-center rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] text-[rgb(var(--color-muted))] transition-colors hover:text-[rgb(var(--color-text))];
+  }
+
+  .menu-toggle {
+    @apply gap-1.5 lg:hidden;
+  }
+
+  .menu-toggle span {
+    @apply block h-0.5 w-4 rounded-full bg-current;
+  }
+
+  .theme-toggle__icon {
+    @apply col-start-1 row-start-1 size-4 fill-none stroke-current stroke-2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .theme-toggle__icon--moon,
+  .dark .theme-toggle__icon--sun {
+    @apply hidden;
+  }
+
+  .dark .theme-toggle__icon--moon {
+    @apply block;
+  }
+
+  .site-footer {
+    @apply border-t border-[rgb(var(--color-border)/0.72)] py-8 text-sm text-[rgb(var(--color-muted))];
+  }
+
+  .site-footer__inner {
+    @apply flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .site-footer__intro {
+    @apply max-w-xl space-y-2;
+  }
+
+  .site-footer__title {
+    @apply font-semibold text-[rgb(var(--color-text))] no-underline;
+  }
+
+  .site-footer__links {
+    @apply flex flex-wrap gap-4;
+  }
+
+  .site-footer__links a {
+    @apply font-medium no-underline hover:text-[rgb(var(--color-text))] hover:underline;
+  }
+
+  .site-footer__copyright {
+    @apply mt-6 text-xs text-[rgb(var(--color-soft))];
+  }
+
+  .section-title {
+    @apply mb-8 max-w-3xl space-y-3;
+  }
+
+  .section-title__eyebrow {
+    @apply text-sm font-semibold uppercase tracking-normal text-[rgb(var(--color-accent))];
+  }
+
+  .section-title__heading {
+    @apply text-3xl font-semibold tracking-normal text-[rgb(var(--color-text))] sm:text-4xl;
+  }
+
+  .section-title__description {
+    @apply text-base leading-7 text-[rgb(var(--color-muted))] sm:text-lg;
+  }
+
+  .tech-badge {
+    @apply inline-flex items-center rounded-md border border-[rgb(var(--color-border)/0.75)] bg-[rgb(var(--color-surface))] px-2.5 py-1 text-xs font-medium text-[rgb(var(--color-muted))];
   }
 }

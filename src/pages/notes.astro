@@ -1,12 +1,56 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+const categories = [
+  {
+    title: "高等数学",
+    description: "整理极限、微积分、级数和多元函数等基础内容，为后续信号处理、优化和成像算法打底。",
+  },
+  {
+    title: "线性代数",
+    description: "记录矩阵、向量空间、特征值、分解方法等知识，重点连接图像处理、深度学习和数值计算。",
+  },
+  {
+    title: "信号与系统",
+    description: "梳理卷积、傅里叶变换、系统响应和采样等概念，服务于成像信号理解与重建方法学习。",
+  },
+  {
+    title: "PyTorch",
+    description: "沉淀模型搭建、训练循环、数据加载、可视化和实验复现相关笔记。",
+  },
+  {
+    title: "Qt",
+    description: "记录界面布局、信号槽、串口通信、线程处理和上位机工程结构。",
+  },
+  {
+    title: "医学影像",
+    description: "整理不同影像模态、图像质量、标注方式和常见分析任务的基础认识。",
+  },
+  {
+    title: "嵌入式开发",
+    description: "记录 Linux 环境、开发板调试、摄像头接入、模型部署和边缘端运行问题。",
+  },
+];
 ---
 
-<BaseLayout title="Notes | My Website">
+<BaseLayout title="学习记录 | 睿睿" description="睿睿的分类式学习记录入口，包含数学、信号、PyTorch、Qt、医学影像和嵌入式开发。">
   <section class="space-y-4">
-    <h1 class="text-4xl font-semibold">Notes</h1>
-    <p class="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-      Short notes and essays will be organized on this page later.
+    <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Notes</p>
+    <h1 class="text-4xl font-semibold">学习记录</h1>
+    <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
+      这里不是传统博客列表，而是按学习主题整理的入口。后续每个分类可以继续扩展为 Markdown 文章、实验记录或读书笔记。
     </p>
+  </section>
+
+  <section class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      categories.map((category) => (
+        <article class="rounded-lg border border-zinc-200 p-5 transition hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600">
+          <h2 class="text-xl font-semibold">{category.title}</h2>
+          <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">{category.description}</p>
+          <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">文章列表待补充</p>
+        </article>
+      ))
+    }
   </section>
 </BaseLayout>

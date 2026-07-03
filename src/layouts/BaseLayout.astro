@@ -1,59 +1,14 @@
 ---
-import "../styles/global.css";
+import Layout from "./Layout.astro";
 
 interface Props {
   title: string;
   description?: string;
 }
 
-const {
-  title,
-  description = "Personal website built with Astro, Tailwind CSS, and TypeScript.",
-} = Astro.props;
-
-const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/projects", label: "Projects" },
-  { href: "/research", label: "Research" },
-  { href: "/notes", label: "Notes" },
-  { href: "/resume", label: "Resume" },
-  { href: "/about", label: "About" },
-];
+const { title, description } = Astro.props;
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/avatar.png" />
-    <title>{title}</title>
-  </head>
-  <body>
-    <div class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-8">
-      <header class="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
-        <a href="/" class="text-lg font-semibold no-underline">My Website</a>
-        <nav aria-label="Primary navigation">
-          <ul class="flex flex-wrap gap-3 text-sm text-zinc-600 dark:text-zinc-300">
-            {
-              navItems.map((item) => (
-                <li>
-                  <a href={item.href} class="no-underline hover:underline">
-                    {item.label}
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
-        </nav>
-      </header>
-      <main class="flex-1 py-12">
-        <slot />
-      </main>
-      <footer class="border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-        <p>Built with Astro, Tailwind CSS, and TypeScript.</p>
-      </footer>
-    </div>
-  </body>
-</html>
+<Layout title={title} description={description}>
+  <slot />
+</Layout>
