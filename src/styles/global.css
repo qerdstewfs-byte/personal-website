@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@config "../../tailwind.config.mjs";
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply min-h-screen bg-white text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50;
+  }
+
+  a {
+    @apply text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-100;
+  }
+}
