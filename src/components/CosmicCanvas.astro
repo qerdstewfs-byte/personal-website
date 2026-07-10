@@ -1,32 +1,35 @@
 <div class="cosmos" data-cosmos aria-hidden="true">
   <canvas class="cosmos__canvas" data-cosmos-canvas></canvas>
-  <div class="cosmos__aurora cosmos__aurora--one"></div>
-  <div class="cosmos__aurora cosmos__aurora--two"></div>
+  <div class="cosmos__nebula cosmos__nebula--one"></div>
+  <div class="cosmos__nebula cosmos__nebula--two"></div>
+  <div class="cosmos__singularity">
+    <span class="cosmos__gravity-ring cosmos__gravity-ring--one"></span>
+    <span class="cosmos__gravity-ring cosmos__gravity-ring--two"></span>
+    <span class="cosmos__gravity-ring cosmos__gravity-ring--three"></span>
+    <span class="cosmos__accretion cosmos__accretion--one"></span>
+    <span class="cosmos__accretion cosmos__accretion--two"></span>
+    <span class="cosmos__event-horizon"></span>
+  </div>
   <div class="cosmos__horizon"></div>
-  <div class="cosmos__voyage-line"><span></span></div>
   <div class="cosmos__grain"></div>
-  <span class="cosmos__coordinate cosmos__coordinate--top">RA 03H 47M 19S</span>
-  <span class="cosmos__coordinate cosmos__coordinate--side">DESTINATION / THE VAST UNKNOWN</span>
+  <div class="cosmos__vignette"></div>
+  <span class="cosmos__coordinate cosmos__coordinate--top">INTERSTELLAR TRANSIT / SECTOR 07</span>
+  <span class="cosmos__coordinate cosmos__coordinate--side">DESTINATION / BEYOND THE KNOWN</span>
+  <div class="cosmos__warp-meter">
+    <span>WARP</span>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <strong>ENGAGED</strong>
+  </div>
 </div>
 
 <script>
-  type Star = {
+  type WarpStar = {
     x: number;
     y: number;
-    depth: number;
-    radius: number;
-    drift: number;
-    pulse: number;
+    z: number;
+    size: number;
     hue: number;
-  };
-
-  type Comet = {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    life: number;
-    maxLife: number;
+    pulse: number;
   };
 
   let stopCosmos: (() => void) | undefined;
@@ -40,31 +43,36 @@
 
     const context = canvas.getContext("2d");
     if (!context) return;
-    const interactionSurface = cosmos.closest<HTMLElement>(".hero--cosmic") ?? cosmos;
 
+    const interactionSurface = cosmos.closest<HTMLElement>(".hero--cosmic") ?? cosmos;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const compact = window.matchMedia("(max-width: 700px)").matches;
     let width = 0;
     let height = 0;
     let ratio = 1;
+    let focalLength = 620;
+    let maxDepth = 1400;
     let animationFrame = 0;
     let lastTime = performance.now();
-    let cometClock = 0;
-    let stars: Star[] = [];
-    let comets: Comet[] = [];
-    const pointer = { x: 0.5, y: 0.45, targetX: 0.5, targetY: 0.45 };
+    let stars: WarpStar[] = [];
+    const pointer = { x: 0.5, y: 0.46, targetX: 0.5, targetY: 0.46 };
+
+    const resetStar = (star: WarpStar, randomDepth = false) => {
+      star.x = (Math.random() - 0.5) * width * 3.8;
+      star.y = (Math.random() - 0.5) * height * 3.8;
+      star.z = randomDepth ? 22 + Math.random() * maxDepth : maxDepth;
+      star.size = 0.45 + Math.random() * 1.65;
+      star.hue = Math.random() > 0.78 ? 270 : Math.random() > 0.7 ? 186 : 218;
+      star.pulse = Math.random() * Math.PI * 2;
+    };
 
     const makeStars = () => {
-      const density = compact ? 48 : Math.min(112, Math.max(74, Math.round(width / 14)));
-      stars = Array.from({ length: density }, (_, index) => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        depth: 0.25 + Math.random() * 0.75,
-        radius: index % 13 === 0 ? 2.1 + Math.random() * 1.1 : 0.55 + Math.random() * 1.25,
-        drift: 0.018 + Math.random() * 0.055,
-        pulse: Math.random() * Math.PI * 2,
-        hue: index % 7 === 0 ? 268 : index % 5 === 0 ? 180 : 218,
-      }));
+      const density = compact ? 108 : Math.min(210, Math.max(156, Math.round(width / 8)));
+      stars = Array.from({ length: density }, () => {
+        const star = { x: 0, y: 0, z: maxDepth, size: 1, hue: 218, pulse: 0 };
+        resetStar(star, true);
+        return star;
+      });
     };
 
     const resize = () => {
@@ -72,6 +80,8 @@
       width = Math.max(1, bounds.width);
       height = Math.max(1, bounds.height);
       ratio = Math.min(window.devicePixelRatio || 1, 2);
+      focalLength = Math.max(440, Math.min(760, width * 0.58));
+      maxDepth = Math.max(1100, width * 1.25);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       canvas.style.width = `${width}px`;
@@ -80,130 +90,80 @@
       makeStars();
     };
 
-    const drawStar = (star: Star, time: number) => {
-      const parallaxX = (pointer.x - 0.5) * 44 * star.depth;
-      const parallaxY = (pointer.y - 0.5) * 28 * star.depth;
-      const x = star.x + parallaxX;
-      const y = star.y + parallaxY;
-      const pulse = 0.62 + Math.sin(time * 0.0014 + star.pulse) * 0.28;
-      const alpha = Math.max(0.14, pulse * star.depth);
-      const color = `hsla(${star.hue}, 82%, 50%, ${alpha})`;
+    const project = (star: WarpStar, depth: number) => {
+      const safeDepth = Math.max(1, depth);
+      const centerX = width * (0.72 + (pointer.x - 0.5) * 0.055);
+      const centerY = height * (0.47 + (pointer.y - 0.5) * 0.045);
+      return {
+        x: centerX + (star.x / safeDepth) * focalLength,
+        y: centerY + (star.y / safeDepth) * focalLength,
+      };
+    };
 
-      if (star.radius > 2) {
-        const glow = context.createRadialGradient(x, y, 0, x, y, star.radius * 5.5);
-        glow.addColorStop(0, `hsla(${star.hue}, 92%, 52%, ${alpha})`);
-        glow.addColorStop(0.18, `hsla(${star.hue}, 90%, 60%, ${alpha * 0.55})`);
-        glow.addColorStop(1, `hsla(${star.hue}, 85%, 65%, 0)`);
+    const drawStar = (star: WarpStar, previousDepth: number, time: number, warp: number) => {
+      const current = project(star, star.z);
+      const previous = project(star, previousDepth + 5 + warp * 14);
+
+      if (current.x < -160 || current.x > width + 160 || current.y < -160 || current.y > height + 160) {
+        resetStar(star);
+        return;
+      }
+
+      const proximity = 1 - star.z / maxDepth;
+      const pulse = 0.76 + Math.sin(time * 0.002 + star.pulse) * 0.24;
+      const alpha = Math.min(0.96, (0.16 + proximity * 0.9) * pulse);
+      const trailScale = 1.15 + proximity * 3.6 + warp * 0.55;
+      const tailX = current.x + (previous.x - current.x) * trailScale;
+      const tailY = current.y + (previous.y - current.y) * trailScale;
+      const gradient = context.createLinearGradient(tailX, tailY, current.x, current.y);
+      gradient.addColorStop(0, `hsla(${star.hue}, 95%, 66%, 0)`);
+      gradient.addColorStop(0.58, `hsla(${star.hue}, 94%, 69%, ${alpha * 0.28})`);
+      gradient.addColorStop(1, `hsla(${star.hue}, 100%, 92%, ${alpha})`);
+
+      context.strokeStyle = gradient;
+      context.lineWidth = Math.min(3.4, 0.35 + proximity * 2.6 + star.size * 0.22);
+      context.beginPath();
+      context.moveTo(tailX, tailY);
+      context.lineTo(current.x, current.y);
+      context.stroke();
+
+      if (proximity > 0.72) {
+        const glowRadius = 4 + proximity * 10;
+        const glow = context.createRadialGradient(current.x, current.y, 0, current.x, current.y, glowRadius);
+        glow.addColorStop(0, `hsla(${star.hue}, 100%, 96%, ${alpha})`);
+        glow.addColorStop(0.22, `hsla(${star.hue}, 96%, 70%, ${alpha * 0.55})`);
+        glow.addColorStop(1, `hsla(${star.hue}, 90%, 60%, 0)`);
         context.fillStyle = glow;
         context.beginPath();
-        context.arc(x, y, star.radius * 5.5, 0, Math.PI * 2);
+        context.arc(current.x, current.y, glowRadius, 0, Math.PI * 2);
         context.fill();
-
-        context.strokeStyle = `hsla(${star.hue}, 82%, 48%, ${alpha * 0.52})`;
-        context.lineWidth = 0.7;
-        context.beginPath();
-        context.moveTo(x - star.radius * 4, y);
-        context.lineTo(x + star.radius * 4, y);
-        context.moveTo(x, y - star.radius * 4);
-        context.lineTo(x, y + star.radius * 4);
-        context.stroke();
       }
-
-      context.fillStyle = color;
-      context.beginPath();
-      context.arc(x, y, star.radius * (0.7 + star.depth * 0.45), 0, Math.PI * 2);
-      context.fill();
-    };
-
-    const drawConnections = () => {
-      const connectionStars = stars.filter((_, index) => index % 2 === 0);
-      for (let first = 0; first < connectionStars.length; first += 1) {
-        for (let second = first + 1; second < connectionStars.length; second += 1) {
-          const a = connectionStars[first];
-          const b = connectionStars[second];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance > 94 || Math.abs(a.depth - b.depth) > 0.25) continue;
-
-          const alpha = (1 - distance / 94) * 0.13;
-          context.strokeStyle = `rgba(65, 113, 229, ${alpha})`;
-          context.lineWidth = 0.55;
-          context.beginPath();
-          context.moveTo(a.x + (pointer.x - 0.5) * 44 * a.depth, a.y + (pointer.y - 0.5) * 28 * a.depth);
-          context.lineTo(b.x + (pointer.x - 0.5) * 44 * b.depth, b.y + (pointer.y - 0.5) * 28 * b.depth);
-          context.stroke();
-        }
-      }
-    };
-
-    const spawnComet = () => {
-      const fromLeft = Math.random() > 0.38;
-      comets.push({
-        x: fromLeft ? -80 : width * (0.4 + Math.random() * 0.5),
-        y: 40 + Math.random() * height * 0.38,
-        vx: fromLeft ? 7.5 + Math.random() * 2.2 : 5.5 + Math.random() * 1.4,
-        vy: 2.3 + Math.random() * 1.4,
-        life: 0,
-        maxLife: 105 + Math.random() * 42,
-      });
-    };
-
-    const drawComets = (delta: number) => {
-      comets = comets.filter((comet) => comet.life < comet.maxLife && comet.x < width + 180);
-      comets.forEach((comet) => {
-        comet.x += comet.vx * delta * 0.06;
-        comet.y += comet.vy * delta * 0.06;
-        comet.life += delta * 0.06;
-        const alpha = Math.sin(Math.min(1, comet.life / 18) * Math.PI * 0.5) * Math.max(0, 1 - comet.life / comet.maxLife);
-        const length = 105;
-        const magnitude = Math.sqrt(comet.vx * comet.vx + comet.vy * comet.vy);
-        const tailX = comet.x - (comet.vx / magnitude) * length;
-        const tailY = comet.y - (comet.vy / magnitude) * length;
-        const gradient = context.createLinearGradient(tailX, tailY, comet.x, comet.y);
-        gradient.addColorStop(0, "rgba(90, 127, 255, 0)");
-        gradient.addColorStop(0.7, `rgba(100, 92, 246, ${alpha * 0.26})`);
-        gradient.addColorStop(1, `rgba(40, 123, 236, ${alpha})`);
-        context.strokeStyle = gradient;
-        context.lineWidth = 1.8;
-        context.beginPath();
-        context.moveTo(tailX, tailY);
-        context.lineTo(comet.x, comet.y);
-        context.stroke();
-        context.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        context.beginPath();
-        context.arc(comet.x, comet.y, 2.4, 0, Math.PI * 2);
-        context.fill();
-      });
     };
 
     const draw = (time: number) => {
       if (!canvas.isConnected) return;
-      const delta = Math.min(32, time - lastTime || 16.7);
+      const delta = Math.min(34, time - lastTime || 16.7);
       lastTime = time;
       context.clearRect(0, 0, width, height);
-      pointer.x += (pointer.targetX - pointer.x) * 0.055;
-      pointer.y += (pointer.targetY - pointer.y) * 0.055;
+      context.globalCompositeOperation = "lighter";
+      pointer.x += (pointer.targetX - pointer.x) * 0.045;
+      pointer.y += (pointer.targetY - pointer.y) * 0.045;
+
+      const breathing = (Math.sin(time * 0.0008) + 1) * 0.5;
+      const warp = reducedMotion ? 0 : 0.92 + breathing * 0.72;
+      const speed = reducedMotion ? 0 : delta * (0.68 + warp * 0.46);
 
       stars.forEach((star) => {
-        star.y -= star.drift * delta;
-        star.x += Math.sin(time * 0.00025 + star.pulse) * 0.006 * delta;
-        if (star.y < -20) {
-          star.y = height + 20;
-          star.x = Math.random() * width;
+        let previousDepth = star.z;
+        star.z -= speed;
+        if (star.z <= 1) {
+          resetStar(star);
+          previousDepth = star.z + speed;
         }
+        drawStar(star, previousDepth, time, warp);
       });
 
-      drawConnections();
-      stars.forEach((star) => drawStar(star, time));
-
-      cometClock += delta;
-      if (!reducedMotion && cometClock > 3100 + Math.random() * 2300) {
-        spawnComet();
-        cometClock = 0;
-      }
-      drawComets(delta);
-
+      context.globalCompositeOperation = "source-over";
       if (!reducedMotion) animationFrame = requestAnimationFrame(draw);
     };
 
@@ -213,8 +173,8 @@
       pointer.targetY = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
       cosmos.style.setProperty("--cosmos-x", `${pointer.targetX * 100}%`);
       cosmos.style.setProperty("--cosmos-y", `${pointer.targetY * 100}%`);
-      interactionSurface.style.setProperty("--space-shift-x", `${(pointer.targetX - 0.5) * 18}px`);
-      interactionSurface.style.setProperty("--space-shift-y", `${(pointer.targetY - 0.5) * 12}px`);
+      interactionSurface.style.setProperty("--space-shift-x", `${(pointer.targetX - 0.5) * 22}px`);
+      interactionSurface.style.setProperty("--space-shift-y", `${(pointer.targetY - 0.5) * 15}px`);
     };
 
     resize();
