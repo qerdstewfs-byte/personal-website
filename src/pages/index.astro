@@ -2,7 +2,6 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ProjectCard from "../components/ProjectCard.astro";
 import CosmicCanvas from "../components/CosmicCanvas.astro";
-import LaunchIntro from "../components/LaunchIntro.astro";
 
 const featuredProjects = [
   {
@@ -38,8 +37,6 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
   title="睿睿 | 医学影像 · AI · 工程系统"
   description="睿睿的个人学术技术主页，探索医学影像、光声成像、深度学习、嵌入式视觉和工程软件。"
 >
-  <LaunchIntro />
-  <div class="home-stage" data-home-stage>
   <section class="hero hero--cosmic">
     <CosmicCanvas />
     <div class="cosmic-beacon" aria-hidden="true">
@@ -178,5 +175,4 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
       </article>
     </div>
   </section>
-  </div>
 </BaseLayout>
