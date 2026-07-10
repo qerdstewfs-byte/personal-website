@@ -1,0 +1,235 @@
+<div class="cosmos" data-cosmos aria-hidden="true">
+  <canvas class="cosmos__canvas" data-cosmos-canvas></canvas>
+  <div class="cosmos__aurora cosmos__aurora--one"></div>
+  <div class="cosmos__aurora cosmos__aurora--two"></div>
+  <div class="cosmos__horizon"></div>
+  <div class="cosmos__grain"></div>
+  <span class="cosmos__coordinate cosmos__coordinate--top">RA 03H 47M 19S</span>
+  <span class="cosmos__coordinate cosmos__coordinate--side">DEC +24° 06′ 18″</span>
+</div>
+
+<script>
+  type Star = {
+    x: number;
+    y: number;
+    depth: number;
+    radius: number;
+    drift: number;
+    pulse: number;
+    hue: number;
+  };
+
+  type Comet = {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    maxLife: number;
+  };
+
+  let stopCosmos: (() => void) | undefined;
+
+  const startCosmos = () => {
+    stopCosmos?.();
+
+    const canvas = document.querySelector<HTMLCanvasElement>("[data-cosmos-canvas]");
+    const cosmos = document.querySelector<HTMLElement>("[data-cosmos]");
+    if (!canvas || !cosmos) return;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const interactionSurface = cosmos.closest<HTMLElement>(".hero--cosmic") ?? cosmos;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = window.matchMedia("(max-width: 700px)").matches;
+    let width = 0;
+    let height = 0;
+    let ratio = 1;
+    let animationFrame = 0;
+    let lastTime = performance.now();
+    let cometClock = 0;
+    let stars: Star[] = [];
+    let comets: Comet[] = [];
+    const pointer = { x: 0.5, y: 0.45, targetX: 0.5, targetY: 0.45 };
+
+    const makeStars = () => {
+      const density = compact ? 48 : Math.min(112, Math.max(74, Math.round(width / 14)));
+      stars = Array.from({ length: density }, (_, index) => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        depth: 0.25 + Math.random() * 0.75,
+        radius: index % 13 === 0 ? 2.1 + Math.random() * 1.1 : 0.55 + Math.random() * 1.25,
+        drift: 0.018 + Math.random() * 0.055,
+        pulse: Math.random() * Math.PI * 2,
+        hue: index % 7 === 0 ? 268 : index % 5 === 0 ? 180 : 218,
+      }));
+    };
+
+    const resize = () => {
+      const bounds = cosmos.getBoundingClientRect();
+      width = Math.max(1, bounds.width);
+      height = Math.max(1, bounds.height);
+      ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      makeStars();
+    };
+
+    const drawStar = (star: Star, time: number) => {
+      const parallaxX = (pointer.x - 0.5) * 44 * star.depth;
+      const parallaxY = (pointer.y - 0.5) * 28 * star.depth;
+      const x = star.x + parallaxX;
+      const y = star.y + parallaxY;
+      const pulse = 0.62 + Math.sin(time * 0.0014 + star.pulse) * 0.28;
+      const alpha = Math.max(0.14, pulse * star.depth);
+      const color = `hsla(${star.hue}, 82%, 50%, ${alpha})`;
+
+      if (star.radius > 2) {
+        const glow = context.createRadialGradient(x, y, 0, x, y, star.radius * 5.5);
+        glow.addColorStop(0, `hsla(${star.hue}, 92%, 52%, ${alpha})`);
+        glow.addColorStop(0.18, `hsla(${star.hue}, 90%, 60%, ${alpha * 0.55})`);
+        glow.addColorStop(1, `hsla(${star.hue}, 85%, 65%, 0)`);
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(x, y, star.radius * 5.5, 0, Math.PI * 2);
+        context.fill();
+
+        context.strokeStyle = `hsla(${star.hue}, 82%, 48%, ${alpha * 0.52})`;
+        context.lineWidth = 0.7;
+        context.beginPath();
+        context.moveTo(x - star.radius * 4, y);
+        context.lineTo(x + star.radius * 4, y);
+        context.moveTo(x, y - star.radius * 4);
+        context.lineTo(x, y + star.radius * 4);
+        context.stroke();
+      }
+
+      context.fillStyle = color;
+      context.beginPath();
+      context.arc(x, y, star.radius * (0.7 + star.depth * 0.45), 0, Math.PI * 2);
+      context.fill();
+    };
+
+    const drawConnections = () => {
+      const connectionStars = stars.filter((_, index) => index % 2 === 0);
+      for (let first = 0; first < connectionStars.length; first += 1) {
+        for (let second = first + 1; second < connectionStars.length; second += 1) {
+          const a = connectionStars[first];
+          const b = connectionStars[second];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance > 94 || Math.abs(a.depth - b.depth) > 0.25) continue;
+
+          const alpha = (1 - distance / 94) * 0.13;
+          context.strokeStyle = `rgba(65, 113, 229, ${alpha})`;
+          context.lineWidth = 0.55;
+          context.beginPath();
+          context.moveTo(a.x + (pointer.x - 0.5) * 44 * a.depth, a.y + (pointer.y - 0.5) * 28 * a.depth);
+          context.lineTo(b.x + (pointer.x - 0.5) * 44 * b.depth, b.y + (pointer.y - 0.5) * 28 * b.depth);
+          context.stroke();
+        }
+      }
+    };
+
+    const spawnComet = () => {
+      const fromLeft = Math.random() > 0.38;
+      comets.push({
+        x: fromLeft ? -80 : width * (0.4 + Math.random() * 0.5),
+        y: 40 + Math.random() * height * 0.38,
+        vx: fromLeft ? 7.5 + Math.random() * 2.2 : 5.5 + Math.random() * 1.4,
+        vy: 2.3 + Math.random() * 1.4,
+        life: 0,
+        maxLife: 105 + Math.random() * 42,
+      });
+    };
+
+    const drawComets = (delta: number) => {
+      comets = comets.filter((comet) => comet.life < comet.maxLife && comet.x < width + 180);
+      comets.forEach((comet) => {
+        comet.x += comet.vx * delta * 0.06;
+        comet.y += comet.vy * delta * 0.06;
+        comet.life += delta * 0.06;
+        const alpha = Math.sin(Math.min(1, comet.life / 18) * Math.PI * 0.5) * Math.max(0, 1 - comet.life / comet.maxLife);
+        const length = 105;
+        const magnitude = Math.sqrt(comet.vx * comet.vx + comet.vy * comet.vy);
+        const tailX = comet.x - (comet.vx / magnitude) * length;
+        const tailY = comet.y - (comet.vy / magnitude) * length;
+        const gradient = context.createLinearGradient(tailX, tailY, comet.x, comet.y);
+        gradient.addColorStop(0, "rgba(90, 127, 255, 0)");
+        gradient.addColorStop(0.7, `rgba(100, 92, 246, ${alpha * 0.26})`);
+        gradient.addColorStop(1, `rgba(40, 123, 236, ${alpha})`);
+        context.strokeStyle = gradient;
+        context.lineWidth = 1.8;
+        context.beginPath();
+        context.moveTo(tailX, tailY);
+        context.lineTo(comet.x, comet.y);
+        context.stroke();
+        context.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        context.beginPath();
+        context.arc(comet.x, comet.y, 2.4, 0, Math.PI * 2);
+        context.fill();
+      });
+    };
+
+    const draw = (time: number) => {
+      if (!canvas.isConnected) return;
+      const delta = Math.min(32, time - lastTime || 16.7);
+      lastTime = time;
+      context.clearRect(0, 0, width, height);
+      pointer.x += (pointer.targetX - pointer.x) * 0.055;
+      pointer.y += (pointer.targetY - pointer.y) * 0.055;
+
+      stars.forEach((star) => {
+        star.y -= star.drift * delta;
+        star.x += Math.sin(time * 0.00025 + star.pulse) * 0.006 * delta;
+        if (star.y < -20) {
+          star.y = height + 20;
+          star.x = Math.random() * width;
+        }
+      });
+
+      drawConnections();
+      stars.forEach((star) => drawStar(star, time));
+
+      cometClock += delta;
+      if (!reducedMotion && cometClock > 3100 + Math.random() * 2300) {
+        spawnComet();
+        cometClock = 0;
+      }
+      drawComets(delta);
+
+      if (!reducedMotion) animationFrame = requestAnimationFrame(draw);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const bounds = cosmos.getBoundingClientRect();
+      pointer.targetX = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+      pointer.targetY = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
+      cosmos.style.setProperty("--cosmos-x", `${pointer.targetX * 100}%`);
+      cosmos.style.setProperty("--cosmos-y", `${pointer.targetY * 100}%`);
+      interactionSurface.style.setProperty("--space-shift-x", `${(pointer.targetX - 0.5) * 18}px`);
+      interactionSurface.style.setProperty("--space-shift-y", `${(pointer.targetY - 0.5) * 12}px`);
+    };
+
+    resize();
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(cosmos);
+    if (!reducedMotion) interactionSurface.addEventListener("pointermove", onPointerMove, { passive: true });
+    draw(performance.now());
+
+    stopCosmos = () => {
+      cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      interactionSurface.removeEventListener("pointermove", onPointerMove);
+      stopCosmos = undefined;
+    };
+  };
+
+  document.addEventListener("astro:page-load", startCosmos);
+  document.addEventListener("astro:before-swap", () => stopCosmos?.());
+</script>

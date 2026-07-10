@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ProjectCard from "../components/ProjectCard.astro";
+import CosmicCanvas from "../components/CosmicCanvas.astro";
 
 const featuredProjects = [
   {
@@ -36,7 +37,12 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
   title="睿睿 | 医学影像 · AI · 工程系统"
   description="睿睿的个人学术技术主页，探索医学影像、光声成像、深度学习、嵌入式视觉和工程软件。"
 >
-  <section class="hero">
+  <section class="hero hero--cosmic">
+    <CosmicCanvas />
+    <div class="cosmic-beacon" aria-hidden="true">
+      <span class="cosmic-beacon__pulse"></span>
+      <span>DEEP SPACE SIGNAL / ONLINE</span>
+    </div>
     <div class="page-frame hero__grid">
       <div class="hero__content" data-reveal>
         <p class="eyebrow">Research · Engineering · Curiosity</p>
@@ -48,11 +54,21 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
           <a href="/projects" class="button-primary">探索项目 <span class="button-arrow">→</span></a>
           <a href="/resume" class="button-secondary">查看简历 <span class="button-arrow">↗</span></a>
         </div>
+        <div class="hero-telemetry" aria-label="研究状态概览">
+          <div><strong>04</strong><span>ACTIVE DOMAINS</span></div>
+          <div><strong>∞</strong><span>CURIOSITY INDEX</span></div>
+          <div><strong>2026</strong><span>CURRENT CYCLE</span></div>
+        </div>
       </div>
 
-      <div class="hero-visual" data-reveal data-reveal-delay="1" aria-label="睿睿的个人研究视觉名片">
+      <div class="hero-visual hero-visual--cosmic" data-reveal data-reveal-delay="1" aria-label="睿睿的个人研究视觉名片">
         <div class="hero-visual__halo"></div>
-        <div class="hero-visual__orbit"></div>
+        <div class="hero-visual__orbit hero-visual__orbit--outer"></div>
+        <div class="hero-visual__orbit hero-visual__orbit--middle"></div>
+        <div class="hero-visual__orbit hero-visual__orbit--inner"></div>
+        <div class="orbit-label orbit-label--one">IMAGING / 01</div>
+        <div class="orbit-label orbit-label--two">NEURAL / 02</div>
+        <div class="orbit-crosshair" aria-hidden="true"><span></span><span></span></div>
         <div class="hero-visual__portrait">
           <img src="/avatar.png" alt="睿睿的头像" width="700" height="814" />
           <div class="portrait-caption">
@@ -67,6 +83,9 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
         <div class="float-chip float-chip--two">
           <span class="float-chip__label">System status</span>
           <span class="float-chip__value"><span class="status-dot"></span> Exploring</span>
+        </div>
+        <div class="hero-visual__signal" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
     </div>
