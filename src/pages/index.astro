@@ -5,98 +5,150 @@ import ProjectCard from "../components/ProjectCard.astro";
 const featuredProjects = [
   {
     title: "光声成像仿真",
-    description: "围绕光声信号产生、传播与重建流程做基础仿真实验，用于理解成像机理和后续算法验证。",
+    description: "从信号产生、传播到图像重建，搭建可复现的仿真实验，理解成像机理并验证算法。",
     tags: ["Photoacoustic", "MATLAB", "Python"],
     status: "学习推进中",
     href: "/projects/photoacoustic-simulation",
   },
   {
     title: "Qt 上位机开发",
-    description: "整理串口通信、图像显示、参数配置和实验控制等常见上位机功能，沉淀可复用的工程界面经验。",
+    description: "将设备通信、实时数据、参数控制和实验流程整合进可靠、清晰的桌面工程界面。",
     tags: ["Qt", "C++", "Serial"],
     status: "持续完善",
     href: "/projects/qt-control-panel",
   },
   {
     title: "树莓派视觉系统",
-    description: "基于树莓派搭建轻量视觉采集与处理流程，关注硬件连接、图像获取和边缘端部署。",
+    description: "面向真实硬件环境，完成视觉采集、图像处理与轻量模型部署的端到端验证。",
     tags: ["Raspberry Pi", "OpenCV", "Linux"],
     status: "原型阶段",
     href: "/projects/raspberry-pi-vision",
   },
 ];
 
-const researchInterests = ["医学影像", "光声成像", "深度学习", "嵌入式视觉", "Qt 工程软件开发"];
+const interests = ["医学影像", "光声成像", "深度学习", "嵌入式视觉"];
 const techStack = ["Python", "PyTorch", "OpenCV", "Qt / C++", "Linux", "Astro", "Tailwind CSS"];
-const learningTopics = ["医学影像基础", "图像重建方法", "PyTorch 实验流程", "嵌入式视觉部署", "Qt 上位机架构"];
+const learningTopics = ["医学影像基础", "图像重建方法", "PyTorch 实验流程", "嵌入式视觉部署"];
+const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Computer Vision", "Embedded Systems", "Engineering UI"];
 ---
 
 <BaseLayout
-  title="睿睿 | 个人学术技术主页"
-  description="睿睿的个人学术技术主页，记录医学影像、光声成像、深度学习、嵌入式视觉和 Qt 工程软件开发。"
+  title="睿睿 | 医学影像 · AI · 工程系统"
+  description="睿睿的个人学术技术主页，探索医学影像、光声成像、深度学习、嵌入式视觉和工程软件。"
 >
-  <section class="space-y-7">
-    <div class="space-y-4">
-      <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Personal academic portfolio</p>
-      <h1 class="text-4xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50 sm:text-5xl">你好，我是睿睿</h1>
-      <p class="max-w-3xl text-xl leading-9 text-zinc-700 dark:text-zinc-200">
-        我关注医学影像、光声成像、深度学习、嵌入式视觉和 Qt 工程软件开发。
-      </p>
-      <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-        这是我的个人学术技术主页，用于记录学习、展示项目、整理科研方向和沉淀工程实践。
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-3">
-      <a href="/projects" class="rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white no-underline hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200">查看项目</a>
-      <a href="/resume" class="rounded-md border border-zinc-300 px-5 py-3 text-sm font-medium no-underline hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">查看简历</a>
-    </div>
-  </section>
-
-  <section class="mt-16 space-y-6">
-    <div>
-      <h2 class="text-2xl font-semibold">研究兴趣</h2>
-      <p class="mt-2 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-300">
-        目前更关注影像技术和工程实现之间的连接：从成像原理、图像重建到模型实验，再到可以运行在真实设备上的软件与视觉系统。
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-2">
-      {researchInterests.map((item) => <span class="rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{item}</span>)}
-    </div>
-  </section>
-
-  <section class="mt-16 space-y-6">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold">精选项目</h2>
-        <p class="mt-2 text-zinc-600 dark:text-zinc-300">先展示正在学习和整理中的项目方向，后续会逐步补充细节、截图和代码说明。</p>
+  <section class="hero">
+    <div class="page-frame hero__grid">
+      <div class="hero__content" data-reveal>
+        <p class="eyebrow">Research · Engineering · Curiosity</p>
+        <h1 class="hero__title">在成像与智能之间，<span class="gradient-text">构建真实可用的系统。</span></h1>
+        <p class="hero__lead">
+          你好，我是睿睿。专注医学影像、光声成像与嵌入式视觉，用算法理解世界，也用工程把想法变成可以运行的作品。
+        </p>
+        <div class="hero__actions">
+          <a href="/projects" class="button-primary">探索项目 <span class="button-arrow">→</span></a>
+          <a href="/resume" class="button-secondary">查看简历 <span class="button-arrow">↗</span></a>
+        </div>
       </div>
-      <a href="/projects" class="text-sm font-medium no-underline hover:underline">查看全部项目</a>
-    </div>
-    <div class="grid gap-5 md:grid-cols-3">
-      {featuredProjects.map((project) => <ProjectCard {...project} />)}
-    </div>
-  </section>
 
-  <section class="mt-16 grid gap-8 md:grid-cols-2">
-    <div class="space-y-4">
-      <h2 class="text-2xl font-semibold">技术栈</h2>
-      <div class="flex flex-wrap gap-2">
-        {techStack.map((item) => <span class="rounded-full border border-zinc-200 px-4 py-2 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">{item}</span>)}
+      <div class="hero-visual" data-reveal data-reveal-delay="1" aria-label="睿睿的个人研究视觉名片">
+        <div class="hero-visual__halo"></div>
+        <div class="hero-visual__orbit"></div>
+        <div class="hero-visual__portrait">
+          <img src="/avatar.png" alt="睿睿的头像" width="700" height="814" />
+          <div class="portrait-caption">
+            <strong>睿睿</strong>
+            <span>Imaging · AI · Systems</span>
+          </div>
+        </div>
+        <div class="float-chip float-chip--one">
+          <span class="float-chip__label">Current focus</span>
+          <span class="float-chip__value"><span class="status-dot"></span> 光声成像</span>
+        </div>
+        <div class="float-chip float-chip--two">
+          <span class="float-chip__label">System status</span>
+          <span class="float-chip__value"><span class="status-dot"></span> Exploring</span>
+        </div>
       </div>
     </div>
-    <div class="space-y-4">
-      <h2 class="text-2xl font-semibold">最近学习方向</h2>
-      <ul class="space-y-3 text-zinc-600 dark:text-zinc-300">
-        {learningTopics.map((item) => <li class="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">{item}</li>)}
-      </ul>
+  </section>
+
+  <div class="signal-strip" aria-hidden="true">
+    <div class="signal-strip__track">
+      {[...tickerItems, ...tickerItems].map((item) => <span class="signal-strip__item">{item}</span>)}
+    </div>
+  </div>
+
+  <section class="section-block">
+    <div class="page-frame">
+      <div class="section-head" data-reveal>
+        <div>
+          <p class="section-kicker">01 / Research lens</p>
+          <h2 class="section-heading">从成像原理到真实设备，<br />关注完整链路。</h2>
+        </div>
+      </div>
+      <div class="interest-panel" data-reveal data-reveal-delay="1">
+        <article class="glass-card interest-intro">
+          <span class="interest-intro__index">RESEARCH / 2026</span>
+          <h3>连接科学问题<br />与工程实现</h3>
+          <p>从信号、图像和模型出发，最终落在可以验证、可以复现、也可以长期演进的系统上。</p>
+        </article>
+        <div class="glass-card interest-map">
+          {interests.map((item, index) => (
+            <div class="interest-item">
+              <span>0{index + 1} / FIELD</span>
+              <strong>{item}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="mt-16 rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
-    <h2 class="text-2xl font-semibold">联系方式入口</h2>
-    <p class="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-300">
-      如果需要交流项目、科研学习或工程实践，可以先通过邮箱联系。这里暂时使用公开占位邮箱，后续可替换为真实的学术或工作邮箱。
-    </p>
-    <a href="mailto:example@example.com" class="mt-4 inline-flex rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium no-underline hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">example@example.com</a>
+  <section class="section-block section-block--compact">
+    <div class="page-frame">
+      <div class="section-head" data-reveal>
+        <div>
+          <p class="section-kicker">02 / Selected work</p>
+          <h2 class="section-heading">正在发生的项目。</h2>
+          <p class="section-copy">不是静态陈列，而是持续推进的实验、原型与工程记录。</p>
+        </div>
+        <a href="/projects" class="text-link">查看全部项目 <span>↗</span></a>
+      </div>
+      <div class="cards-grid">
+        {featuredProjects.map((project, index) => <div data-reveal data-reveal-delay={index === 0 ? undefined : String(Math.min(index, 2))}><ProjectCard {...project} /></div>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="page-frame split-grid">
+      <article class="content-card" data-reveal>
+        <p class="section-kicker">03 / Toolset</p>
+        <h3>技术栈</h3>
+        <div class="stack-cloud">
+          {techStack.map((item) => <span class="stack-pill">{item}</span>)}
+        </div>
+      </article>
+      <article class="content-card" data-reveal data-reveal-delay="1">
+        <p class="section-kicker">04 / Now learning</p>
+        <h3>最近学习方向</h3>
+        <ol class="learning-list">
+          {learningTopics.map((item) => <li>{item}</li>)}
+        </ol>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-block section-block--compact">
+    <div class="page-frame">
+      <article class="glass-card cta-card" data-reveal>
+        <div>
+          <p class="section-kicker">Build something meaningful</p>
+          <h2>对研究、项目或工程实践<br />有共同兴趣？</h2>
+          <p>欢迎交流医学影像、视觉系统与科研工程化。当前邮箱为占位信息，可随时替换为正式联系方式。</p>
+        </div>
+        <a href="mailto:example@example.com" class="button-primary">发一封邮件 <span class="button-arrow">↗</span></a>
+      </article>
+    </div>
   </section>
 </BaseLayout>

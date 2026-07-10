@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-
 const researchAreas = ["医学影像", "光声成像", "图像重建", "深度学习", "嵌入式视觉"];
 const skills = ["Python", "PyTorch", "OpenCV", "Qt / C++", "Linux", "Git", "Astro / Tailwind CSS"];
 const projectExperience = [
@@ -9,58 +8,43 @@ const projectExperience = [
   "嵌入式视觉系统：尝试在树莓派与 K230 等平台上完成视觉采集和端侧推理。",
 ];
 ---
-
 <BaseLayout title="简历 | 睿睿" description="睿睿的公开简历页面，展示教育经历、研究方向、技能栈和项目经历。">
-  <section class="space-y-4">
-    <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Resume</p>
-    <h1 class="text-4xl font-semibold">简历</h1>
-    <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-      这是公开展示版本的简历页面，仅保留适合个人主页展示的信息。详细经历、成绩单、证件信息和私人联系方式不会在这里直接公开。
-    </p>
-    <a href="/resume.pdf" class="inline-flex rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white no-underline hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200">下载 PDF 简历</a>
+  <section class="page-hero">
+    <div class="page-frame" data-reveal>
+      <p class="eyebrow">Resume · Capabilities · Experience</p>
+      <h1 class="page-hero__title">研究与工程能力，<br /><span class="gradient-text">一页清晰呈现。</span></h1>
+      <p class="page-hero__copy">公开展示版本仅保留适合个人主页的信息。详细经历、证件信息与私人联系方式不会直接公开。</p>
+      <div class="hero__actions"><a href="/resume.pdf" class="button-primary">下载 PDF 简历 <span class="button-arrow">↓</span></a></div>
+    </div>
   </section>
-
-  <section class="mt-10 grid gap-5">
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">基本介绍</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">
-        我是睿睿，目前正在围绕 AI、医学影像、嵌入式视觉和工程软件开发持续学习与实践，希望把科研问题和可运行的工程项目结合起来。
-      </p>
-    </article>
-
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">教育经历</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">
-        研究生阶段相关学习经历待补充。后续可以加入学校、专业、研究方向、导师课题组或公开可展示的课程与科研训练信息。
-      </p>
-    </article>
-
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">研究方向</h2>
-      <div class="mt-4 flex flex-wrap gap-2">
-        {researchAreas.map((item) => <span class="rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{item}</span>)}
+  <section class="page-content">
+    <div class="page-frame resume-stack">
+      <article class="content-card resume-card" data-reveal>
+        <p class="section-kicker">01 / Profile</p><h2>基本介绍</h2>
+        <p>我是睿睿，正在围绕 AI、医学影像、嵌入式视觉和工程软件开发持续学习与实践，希望把科研问题与可运行的工程项目结合起来。</p>
+      </article>
+      <article class="content-card resume-card" data-reveal>
+        <p class="section-kicker">02 / Education</p><h2>教育经历</h2>
+        <p>研究生阶段相关学习经历待补充。后续可以加入学校、专业、研究方向、导师课题组或公开可展示的课程与科研训练信息。</p>
+      </article>
+      <div class="split-grid">
+        <article class="content-card resume-card" data-reveal>
+          <p class="section-kicker">03 / Research</p><h2>研究方向</h2>
+          <div class="stack-cloud">{researchAreas.map((item) => <span class="stack-pill">{item}</span>)}</div>
+        </article>
+        <article class="content-card resume-card" data-reveal data-reveal-delay="1">
+          <p class="section-kicker">04 / Skills</p><h2>技能栈</h2>
+          <div class="stack-cloud">{skills.map((item) => <span class="stack-pill">{item}</span>)}</div>
+        </article>
       </div>
-    </article>
-
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">技能栈</h2>
-      <div class="mt-4 flex flex-wrap gap-2">
-        {skills.map((item) => <span class="rounded-full border border-zinc-200 px-4 py-2 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">{item}</span>)}
-      </div>
-    </article>
-
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">项目经历</h2>
-      <ul class="mt-4 space-y-3 text-zinc-600 dark:text-zinc-300">
-        {projectExperience.map((item) => <li class="leading-7">{item}</li>)}
-      </ul>
-    </article>
-
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-2xl font-semibold">联系方式</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">
-        邮箱：<a href="mailto:example@example.com">example@example.com</a>
-      </p>
-    </article>
+      <article class="content-card resume-card" data-reveal>
+        <p class="section-kicker">05 / Experience</p><h2>项目经历</h2>
+        <ul>{projectExperience.map((item) => <li>{item}</li>)}</ul>
+      </article>
+      <article class="glass-card cta-card" data-reveal>
+        <div><p class="section-kicker">06 / Contact</p><h2>保持联系。</h2><p>当前使用公开占位邮箱，可替换为正式的学术或工作邮箱。</p></div>
+        <a href="mailto:example@example.com" class="button-secondary">example@example.com <span class="button-arrow">↗</span></a>
+      </article>
+    </div>
   </section>
 </BaseLayout>

@@ -1,38 +1,34 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+const facets = [
+  { title: "学习方向", description: "医学影像、光声成像、深度学习和图像重建。" },
+  { title: "工程实践", description: "Qt 上位机、嵌入式视觉、图像处理和实验工具开发。" },
+  { title: "工作方式", description: "从原理出发，以实验验证，用工程实现完成闭环。" },
+];
 ---
-
 <BaseLayout title="关于我 | 睿睿" description="关于睿睿的个人介绍，关注 AI、医学影像、嵌入式视觉和工程软件开发。">
-  <section class="space-y-5">
-    <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">About</p>
-    <h1 class="text-4xl font-semibold">关于我</h1>
-    <div class="max-w-3xl space-y-4 text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-      <p>
-        我正在学习 AI、医学影像、嵌入式视觉和工程软件开发，希望把科研学习和真实工程项目结合起来，逐步积累自己的项目、技术能力和研究方向。
-      </p>
-      <p>
-        这个网站会作为一个长期整理空间：一部分用来记录学习路线和阶段性理解，一部分用来展示项目实践，也会慢慢沉淀科研方向、工具链和工程经验。
-      </p>
-      <p>
-        目前内容还在持续补充中。相比包装自己，我更希望这里能清楚地呈现正在做什么、学到了什么，以及下一步准备往哪里深入。
-      </p>
+  <section class="page-hero">
+    <div class="page-frame" data-reveal>
+      <p class="eyebrow">About · Direction · Practice</p>
+      <h1 class="page-hero__title">保持好奇，持续验证，<br /><span class="gradient-text">认真构建每一个答案。</span></h1>
     </div>
   </section>
-
-  <section class="mt-12 grid gap-5 md:grid-cols-3">
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-xl font-semibold">学习方向</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">医学影像、光声成像、深度学习和图像重建。</p>
-    </article>
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-xl font-semibold">工程实践</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">Qt 上位机、嵌入式视觉、图像处理和实验工具开发。</p>
-    </article>
-    <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 class="text-xl font-semibold">联系入口</h2>
-      <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">
-        邮箱：<a href="mailto:example@example.com">example@example.com</a>
-      </p>
-    </article>
+  <section class="page-content">
+    <div class="page-frame">
+      <article class="glass-card prose-panel" data-reveal>
+        <p>我正在学习 AI、医学影像、嵌入式视觉和工程软件开发，希望把科研学习与真实工程项目结合起来，逐步积累自己的项目、技术能力和研究方向。</p>
+        <p>这个网站是一个长期整理空间：一部分记录学习路线和阶段性理解，一部分展示项目实践，也持续沉淀科研方向、工具链和工程经验。</p>
+        <p>相比包装自己，我更希望这里能清楚地呈现正在做什么、学到了什么，以及下一步准备往哪里深入。</p>
+      </article>
+      <div class="cards-grid" style="margin-top: 18px;">
+        {facets.map((facet, index) => (
+          <article class="topic-card" data-reveal data-reveal-delay={String(index)}>
+            <span class="topic-card__index">0{index + 1} / PROFILE</span>
+            <h2>{facet.title}</h2>
+            <p>{facet.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
   </section>
 </BaseLayout>

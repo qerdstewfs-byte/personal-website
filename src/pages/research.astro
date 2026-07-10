@@ -1,51 +1,31 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-
 const directions = [
-  {
-    title: "医学影像",
-    description: "关注影像数据从采集、预处理到分析解释的完整流程，重点理解不同成像方式的特点，以及影像算法在真实医学问题中的适用边界。",
-  },
-  {
-    title: "光声成像",
-    description: "学习光声效应、声波传播和探测器采样等基础内容，尝试用仿真和重建实验帮助理解这种兼具光学对比度与声学穿透能力的成像方式。",
-  },
-  {
-    title: "图像重建",
-    description: "围绕由测量信号恢复图像这一核心问题，梳理传统重建方法、迭代优化思路和学习型重建方法之间的联系。",
-  },
-  {
-    title: "深度学习",
-    description: "通过 PyTorch 实验理解模型结构、训练流程、评估指标和实验复现，逐步把深度学习方法用于影像分析与视觉识别任务。",
-  },
-  {
-    title: "嵌入式视觉",
-    description: "关注摄像头采集、边缘端推理、硬件资源限制和部署稳定性，希望把视觉算法从电脑实验推进到真实设备运行。",
-  },
-  {
-    title: "工程软件开发",
-    description: "以 Qt 上位机和实验工具为主要场景，整理界面交互、设备通信、数据显示和工程结构，让科研实验过程更可控、更容易复现。",
-  },
+  { title: "医学影像", description: "关注影像数据从采集、预处理到分析解释的完整流程，理解不同成像方式的特点与真实医学问题中的适用边界。" },
+  { title: "光声成像", description: "学习光声效应、声波传播与探测器采样，通过仿真和重建实验理解兼具光学对比度与声学穿透能力的成像方式。" },
+  { title: "图像重建", description: "围绕由测量信号恢复图像这一核心问题，梳理传统方法、迭代优化与学习型重建方法之间的联系。" },
+  { title: "深度学习", description: "通过 PyTorch 实验理解模型结构、训练流程、评估指标和实验复现，将方法用于影像分析与视觉识别。" },
+  { title: "嵌入式视觉", description: "关注摄像头采集、边缘端推理、硬件资源限制与部署稳定性，让视觉算法从电脑实验走向真实设备。" },
+  { title: "工程软件开发", description: "以 Qt 上位机和实验工具为主要场景，整理界面交互、设备通信、数据显示和工程结构，让实验过程更可控。" },
 ];
 ---
-
 <BaseLayout title="科研方向 | 睿睿" description="睿睿关注医学影像、光声成像、图像重建、深度学习、嵌入式视觉和工程软件开发。">
-  <section class="space-y-4">
-    <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Research</p>
-    <h1 class="text-4xl font-semibold">科研方向</h1>
-    <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-      目前的学习和研究兴趣主要围绕医学影像与工程实现展开。这个页面先作为方向索引，后续可以补充论文阅读、实验记录和阶段性总结。
-    </p>
+  <section class="page-hero">
+    <div class="page-frame" data-reveal>
+      <p class="eyebrow">Research · Questions · Evidence</p>
+      <h1 class="page-hero__title">探索看不见的信号，<br /><span class="gradient-text">理解可感知的世界。</span></h1>
+      <p class="page-hero__copy">研究兴趣围绕医学影像与工程实现展开：从信号、成像与重建，到模型、软件和真实设备，逐步建立完整的问题视角。</p>
+    </div>
   </section>
-
-  <section class="mt-10 grid gap-5 md:grid-cols-2">
-    {
-      directions.map((direction) => (
-        <article class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-          <h2 class="text-xl font-semibold">{direction.title}</h2>
-          <p class="mt-3 leading-7 text-zinc-600 dark:text-zinc-300">{direction.description}</p>
+  <section class="page-content">
+    <div class="page-frame cards-grid cards-grid--two">
+      {directions.map((direction, index) => (
+        <article class="topic-card" data-reveal data-reveal-delay={String(index % 2)}>
+          <span class="topic-card__index">0{index + 1} / RESEARCH FIELD</span>
+          <h2>{direction.title}</h2>
+          <p>{direction.description}</p>
         </article>
-      ))
-    }
+      ))}
+    </div>
   </section>
 </BaseLayout>

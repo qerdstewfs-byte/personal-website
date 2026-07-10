@@ -1,6 +1,4 @@
 ---
-import ThemeToggle from "./ThemeToggle.astro";
-
 const navItems = [
   { href: "/", label: "首页" },
   { href: "/projects", label: "项目" },
@@ -28,12 +26,11 @@ const isActive = (href: string) => {
         <span class="brand__mark" aria-hidden="true">R</span>
         <span class="brand__text">
         <span class="brand__name">睿睿</span>
-        <span class="brand__meta">Academic / Technical</span>
+        <span class="brand__meta">Imaging · AI · Systems</span>
       </span>
     </a>
 
     <div class="site-header__actions">
-      <ThemeToggle />
       <button
         class="menu-toggle"
         type="button"
@@ -65,12 +62,14 @@ const isActive = (href: string) => {
 </header>
 
 <script>
-  const menuButton = document.querySelector("[data-menu-toggle]");
-  const primaryNav = document.querySelector("[data-primary-nav]");
+  document.addEventListener("astro:page-load", () => {
+    const menuButton = document.querySelector("[data-menu-toggle]");
+    const primaryNav = document.querySelector("[data-primary-nav]");
 
-  menuButton?.addEventListener("click", () => {
-    const isOpen = menuButton.getAttribute("aria-expanded") === "true";
-    menuButton.setAttribute("aria-expanded", String(!isOpen));
-    primaryNav?.toggleAttribute("data-open", !isOpen);
+    menuButton?.addEventListener("click", () => {
+      const isOpen = menuButton.getAttribute("aria-expanded") === "true";
+      menuButton.setAttribute("aria-expanded", String(!isOpen));
+      primaryNav?.toggleAttribute("data-open", !isOpen);
+    });
   });
 </script>
