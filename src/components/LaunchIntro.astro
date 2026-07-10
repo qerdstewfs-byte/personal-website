@@ -1,0 +1,1054 @@
+<div
+  class="launch-intro"
+  data-launch-intro
+  data-state="idle"
+  role="dialog"
+  aria-modal="true"
+  aria-label="从地球出发，驶向银河的电影序章"
+>
+  <canvas class="launch-intro__canvas" data-launch-canvas></canvas>
+  <canvas class="launch-intro__fallback" data-launch-fallback hidden></canvas>
+  <div class="launch-intro__grade" aria-hidden="true"></div>
+  <div class="launch-intro__noise" aria-hidden="true"></div>
+
+  <div class="launch-intro__topbar">
+    <div class="launch-intro__mission">
+      <span class="launch-intro__status-dot"></span>
+      <span>MISSION 01 / INTERSTELLAR DEPARTURE</span>
+    </div>
+    <button class="launch-intro__sound" type="button" data-intro-sound aria-pressed="false">
+      <span class="launch-intro__sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span data-intro-sound-label>开启声音</span>
+    </button>
+  </div>
+
+  <div class="launch-intro__caption" data-intro-caption aria-live="polite">
+    <span data-intro-kicker>MISSION INITIALIZING</span>
+    <strong data-intro-title>正在校准星际航线</strong>
+  </div>
+
+  <div class="launch-intro__final" data-intro-final aria-hidden="true">
+    <span>OUR FUTURE LIES BEYOND</span>
+    <strong>未来，是星辰大海</strong>
+  </div>
+
+  <div class="launch-intro__footer">
+    <span data-intro-phase>01 / 07</span>
+    <div class="launch-intro__progress" aria-hidden="true"><i data-intro-progress></i></div>
+    <time data-intro-time>00:24</time>
+  </div>
+</div>
+
+<script>
+  import type * as ThreeTypes from "three";
+  import type { EffectComposer as EffectComposerType } from "three/addons/postprocessing/EffectComposer.js";
+  import type { UnrealBloomPass as UnrealBloomPassType } from "three/addons/postprocessing/UnrealBloomPass.js";
+
+  let THREE: typeof import("three");
+
+  const SESSION_KEY = "home-intro-v1";
+  const DURATION = 24;
+
+  const phases = [
+    { start: 0, kicker: "ORIGIN / EARTH", title: "我们的故事，从这颗蓝色星球开始" },
+    { start: 2.5, kicker: "IGNITION SEQUENCE", title: "点火，向未知出发" },
+    { start: 6.5, kicker: "ATMOSPHERE / ASCENT", title: "穿越大气层" },
+    { start: 10.5, kicker: "DEEP SPACE / ONLINE", title: "地球正在远去" },
+    { start: 14.5, kicker: "INTERSTELLAR DRIVE", title: "曲速引擎已启动" },
+    { start: 20.5, kicker: "GALACTIC ARRIVAL", title: "群星在前方汇聚" },
+    { start: 23, kicker: "DESTINATION / FUTURE", title: "未来，是星辰大海" },
+  ];
+
+  const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+  const range = (time: number, start: number, end: number) => clamp((time - start) / (end - start));
+  const smooth = (value: number) => value * value * (3 - 2 * value);
+  const lerp = (from: number, to: number, amount: number) => from + (to - from) * amount;
+
+  let activeCleanup: (() => void) | undefined;
+
+  type AudioEngine = {
+    toggle: () => Promise<boolean>;
+    update: (time: number) => void;
+    setPageVisible: (visible: boolean) => void;
+    dispose: () => void;
+  };
+
+  const createAudioEngine = (): AudioEngine => {
+    let context: AudioContext | undefined;
+    let master: GainNode | undefined;
+    let rumbleGain: GainNode | undefined;
+    let warpGain: GainNode | undefined;
+    let padGain: GainNode | undefined;
+    let rumbleOscillator: OscillatorNode | undefined;
+    let warpOscillator: OscillatorNode | undefined;
+    let padOscillator: OscillatorNode | undefined;
+    let noiseSource: AudioBufferSourceNode | undefined;
+    let enabled = false;
+
+    const setup = () => {
+      if (context) return;
+      context = new AudioContext();
+      master = context.createGain();
+      master.gain.value = 0;
+      master.connect(context.destination);
+
+      const lowpass = context.createBiquadFilter();
+      lowpass.type = "lowpass";
+      lowpass.frequency.value = 260;
+      rumbleGain = context.createGain();
+      rumbleGain.gain.value = 0;
+      rumbleGain.connect(lowpass).connect(master);
+
+      rumbleOscillator = context.createOscillator();
+      rumbleOscillator.type = "sawtooth";
+      rumbleOscillator.frequency.value = 42;
+      rumbleOscillator.connect(rumbleGain);
+      rumbleOscillator.start();
+
+      const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+      const channel = noiseBuffer.getChannelData(0);
+      for (let index = 0; index < channel.length; index += 1) channel[index] = Math.random() * 2 - 1;
+      noiseSource = context.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+      noiseSource.loop = true;
+      noiseSource.connect(rumbleGain);
+      noiseSource.start();
+
+      const warpFilter = context.createBiquadFilter();
+      warpFilter.type = "bandpass";
+      warpFilter.frequency.value = 780;
+      warpFilter.Q.value = 1.2;
+      warpGain = context.createGain();
+      warpGain.gain.value = 0;
+      warpGain.connect(warpFilter).connect(master);
+      warpOscillator = context.createOscillator();
+      warpOscillator.type = "sawtooth";
+      warpOscillator.frequency.value = 86;
+      warpOscillator.connect(warpGain);
+      warpOscillator.start();
+
+      padGain = context.createGain();
+      padGain.gain.value = 0;
+      padGain.connect(master);
+      padOscillator = context.createOscillator();
+      padOscillator.type = "sine";
+      padOscillator.frequency.value = 164.81;
+      padOscillator.connect(padGain);
+      padOscillator.start();
+    };
+
+    return {
+      toggle: async () => {
+        try { setup(); } catch { return false; }
+        if (!context || !master) return false;
+        enabled = !enabled;
+        if (enabled) void context.resume().catch(() => undefined);
+        master.gain.setTargetAtTime(enabled ? 0.5 : 0, context.currentTime, 0.08);
+        return enabled;
+      },
+      update: (time) => {
+        if (!context || !enabled || !rumbleGain || !warpGain || !padGain || !warpOscillator) return;
+        const now = context.currentTime;
+        const ignition = smooth(range(time, 2.1, 3.4)) * (1 - smooth(range(time, 9.5, 11.2)));
+        const warp = smooth(range(time, 13.2, 15.5)) * (1 - smooth(range(time, 20, 21.2)));
+        const pad = smooth(range(time, 19.5, 21.5));
+        rumbleGain.gain.setTargetAtTime(ignition * 0.36, now, 0.05);
+        warpGain.gain.setTargetAtTime(warp * 0.24, now, 0.05);
+        padGain.gain.setTargetAtTime(pad * 0.13, now, 0.12);
+        warpOscillator.frequency.setTargetAtTime(86 + warp * 620, now, 0.08);
+      },
+      setPageVisible: (visible) => {
+        if (!context || !enabled) return;
+        if (visible) void context.resume().catch(() => undefined);
+        else void context.suspend().catch(() => undefined);
+      },
+      dispose: () => {
+        enabled = false;
+        try { rumbleOscillator?.stop(); } catch {}
+        try { warpOscillator?.stop(); } catch {}
+        try { padOscillator?.stop(); } catch {}
+        try { noiseSource?.stop(); } catch {}
+        void context?.close();
+        context = undefined;
+      },
+    };
+  };
+
+  const makeAtmosphereMaterial = () => new THREE.ShaderMaterial({
+    uniforms: {
+      glowColor: { value: new THREE.Color(0x5daaff) },
+      reveal: { value: 0 },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 glowColor;
+      uniform float reveal;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      void main() {
+        vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
+        float intensity = pow(0.72 - dot(vNormal, viewDirection), 3.0);
+        gl_FragColor = vec4(glowColor, intensity * 0.9 * reveal);
+      }
+    `,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  const createCloudTexture = () => {
+    const cloudCanvas = document.createElement("canvas");
+    cloudCanvas.width = 512;
+    cloudCanvas.height = 256;
+    const context = cloudCanvas.getContext("2d");
+    if (!context) return null;
+
+    context.clearRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+    for (let index = 0; index < 180; index += 1) {
+      const x = Math.random() * cloudCanvas.width;
+      const y = Math.random() * cloudCanvas.height;
+      const radius = 4 + Math.random() * 22;
+      const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, `rgba(255,255,255,${0.08 + Math.random() * 0.2})`);
+      gradient.addColorStop(0.55, "rgba(225,240,255,.08)");
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      context.fillStyle = gradient;
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(cloudCanvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  };
+
+  const createRocket = () => {
+    const rocket = new THREE.Group();
+    const white = new THREE.MeshStandardMaterial({ color: 0xe8edf7, metalness: 0.64, roughness: 0.28 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x11182a, metalness: 0.8, roughness: 0.2 });
+    const accent = new THREE.MeshStandardMaterial({ color: 0x6e7cff, emissive: 0x1f2c8a, emissiveIntensity: 0.8, metalness: 0.5, roughness: 0.26 });
+
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.58, 3.5, 32), white);
+    body.position.y = 1.55;
+    rocket.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.48, 1.22, 32), white);
+    nose.position.y = 3.9;
+    rocket.add(nose);
+    const windowBand = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.42, 32), dark);
+    windowBand.position.y = 2.66;
+    rocket.add(windowBand);
+    const engineBand = new THREE.Mesh(new THREE.CylinderGeometry(0.59, 0.59, 0.35, 32), accent);
+    engineBand.position.y = -0.15;
+    rocket.add(engineBand);
+    const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.38, 0.62, 24, 1, true), dark);
+    nozzle.position.y = -0.62;
+    rocket.add(nozzle);
+
+    for (let index = 0; index < 3; index += 1) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.08, 0.82), accent);
+      const angle = (index / 3) * Math.PI * 2;
+      fin.position.set(Math.cos(angle) * 0.56, 0.18, Math.sin(angle) * 0.56);
+      fin.rotation.y = -angle;
+      rocket.add(fin);
+    }
+
+    const outerFlameMaterial = new THREE.MeshBasicMaterial({ color: 0x4e8cff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const innerFlameMaterial = new THREE.MeshBasicMaterial({ color: 0xfff2c2, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const outerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.46, 3.2, 24), outerFlameMaterial);
+    outerFlame.rotation.z = Math.PI;
+    outerFlame.position.y = -2.35;
+    rocket.add(outerFlame);
+    const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.22, 2.25, 20), innerFlameMaterial);
+    innerFlame.rotation.z = Math.PI;
+    innerFlame.position.y = -1.85;
+    rocket.add(innerFlame);
+
+    const engineLight = new THREE.PointLight(0x6699ff, 0, 16, 2);
+    engineLight.position.y = -1.4;
+    rocket.add(engineLight);
+
+    return { rocket, outerFlame, innerFlame, outerFlameMaterial, innerFlameMaterial, engineLight };
+  };
+
+  const createStars = (count: number) => {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const color = new THREE.Color();
+    for (let index = 0; index < count; index += 1) {
+      positions[index * 3] = (Math.random() - 0.5) * 180;
+      positions[index * 3 + 1] = (Math.random() - 0.5) * 130;
+      positions[index * 3 + 2] = Math.random() * -220 + 35;
+      color.setHSL(Math.random() > 0.82 ? 0.72 : 0.58, 0.56, 0.72 + Math.random() * 0.25, THREE.SRGBColorSpace);
+      colors[index * 3] = color.r;
+      colors[index * 3 + 1] = color.g;
+      colors[index * 3 + 2] = color.b;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({ size: 0.23, vertexColors: true, transparent: true, opacity: 0.86, blending: THREE.AdditiveBlending, depthWrite: false });
+    return new THREE.Points(geometry, material);
+  };
+
+  const createGalaxy = (count: number) => {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const color = new THREE.Color();
+    for (let index = 0; index < count; index += 1) {
+      const radius = Math.pow(Math.random(), 0.64) * 44;
+      const arm = index % 4;
+      const angle = radius * 0.34 + (arm / 4) * Math.PI * 2 + (Math.random() - 0.5) * 0.62;
+      positions[index * 3] = Math.cos(angle) * radius;
+      positions[index * 3 + 1] = (Math.random() - 0.5) * (4.5 - radius * 0.06);
+      positions[index * 3 + 2] = Math.sin(angle) * radius;
+      const core = 1 - radius / 44;
+      color.setHSL(0.58 + (1 - core) * 0.18, 0.68, 0.56 + core * 0.4, THREE.SRGBColorSpace);
+      colors[index * 3] = color.r;
+      colors[index * 3 + 1] = color.g;
+      colors[index * 3 + 2] = color.b;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const galaxy = new THREE.Points(geometry, material);
+    galaxy.rotation.x = 1.03;
+    galaxy.position.set(0, 30, -145);
+    return { galaxy, material };
+  };
+
+  const createWarpLines = (count: number) => {
+    const positions = new Float32Array(count * 6);
+    for (let index = 0; index < count; index += 1) {
+      const radius = 3 + Math.random() * 34;
+      const angle = Math.random() * Math.PI * 2;
+      const z = -125 + Math.random() * 128;
+      positions[index * 6] = Math.cos(angle) * radius;
+      positions[index * 6 + 1] = Math.sin(angle) * radius;
+      positions[index * 6 + 2] = z;
+      positions[index * 6 + 3] = Math.cos(angle) * radius;
+      positions[index * 6 + 4] = Math.sin(angle) * radius;
+      positions[index * 6 + 5] = z + 4 + Math.random() * 12;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.LineBasicMaterial({ color: 0x8cb4ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const lines = new THREE.LineSegments(geometry, material);
+    lines.position.set(0, 30, -70);
+    return { lines, material, positions };
+  };
+
+  const createLaunchParticles = (count: number, color: number, size: number, additive = false) => {
+    const positions = new Float32Array(count * 3);
+    const seeds = new Float32Array(count);
+    for (let index = 0; index < count; index += 1) seeds[index] = Math.random();
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      color,
+      size,
+      transparent: true,
+      opacity: 0,
+      blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+    const points = new THREE.Points(geometry, material);
+    points.visible = false;
+    return { points, positions, seeds, material };
+  };
+
+  const disposeScene = (scene: ThreeTypes.Scene) => {
+    scene.traverse((object) => {
+      const mesh = object as ThreeTypes.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+      const materials = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+      materials.forEach((material) => {
+        Object.values(material).forEach((value) => {
+          if (value instanceof THREE.Texture) value.dispose();
+        });
+        material.dispose();
+      });
+    });
+  };
+
+  const releasePendingIntro = (root?: HTMLElement | null) => {
+    root?.setAttribute("hidden", "");
+    document.body.classList.remove("intro-locked");
+    document.documentElement.dataset.homeIntro = "seen";
+    document.dispatchEvent(new CustomEvent("home-intro:complete"));
+  };
+
+  const startIntro = async () => {
+    activeCleanup?.();
+    activeCleanup = undefined;
+
+    const root = document.querySelector<HTMLElement>("[data-launch-intro]");
+    if (!root || document.documentElement.dataset.homeIntro !== "pending") {
+      root?.setAttribute("hidden", "");
+      if (document.documentElement.dataset.homeIntro === "pending") releasePendingIntro(root);
+      return;
+    }
+
+    const canvas = root.querySelector<HTMLCanvasElement>("[data-launch-canvas]");
+    const fallbackCanvas = root.querySelector<HTMLCanvasElement>("[data-launch-fallback]");
+    const soundButton = root.querySelector<HTMLButtonElement>("[data-intro-sound]");
+    const soundLabel = root.querySelector<HTMLElement>("[data-intro-sound-label]");
+    const kicker = root.querySelector<HTMLElement>("[data-intro-kicker]");
+    const title = root.querySelector<HTMLElement>("[data-intro-title]");
+    const phaseLabel = root.querySelector<HTMLElement>("[data-intro-phase]");
+    const progress = root.querySelector<HTMLElement>("[data-intro-progress]");
+    const timeLabel = root.querySelector<HTMLElement>("[data-intro-time]");
+    if (!canvas || !fallbackCanvas || !soundButton || !soundLabel || !kicker || !title || !phaseLabel || !progress || !timeLabel) {
+      releasePendingIntro(root);
+      return;
+    }
+
+    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch {}
+    document.documentElement.dataset.homeIntro = "playing";
+    root.hidden = false;
+    root.dataset.state = "loading";
+
+    const pageTargets = [
+      document.querySelector<HTMLElement>(".site-header"),
+      document.querySelector<HTMLElement>("[data-home-stage]"),
+      document.querySelector<HTMLElement>(".site-footer"),
+    ].filter((target): target is HTMLElement => Boolean(target));
+    pageTargets.forEach((target) => {
+      target.inert = true;
+      target.setAttribute("aria-hidden", "true");
+    });
+    document.body.classList.add("intro-locked");
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    soundButton.focus({ preventScroll: true });
+
+    const audio = createAudioEngine();
+    let disposed = false;
+    let frame = 0;
+    let elapsed = 0;
+    let lastFrame = performance.now();
+    let activePhase = -1;
+    let renderer: ThreeTypes.WebGLRenderer | undefined;
+    let composer: EffectComposerType | undefined;
+    let bloomPass: UnrealBloomPassType | undefined;
+    let scene: ThreeTypes.Scene | undefined;
+    let camera: ThreeTypes.PerspectiveCamera | undefined;
+    let renderThree: ((time: number, delta: number) => void) | undefined;
+    let fallbackContext: CanvasRenderingContext2D | null = null;
+    let earthImage: HTMLImageElement | undefined;
+    let finishing = false;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobile = window.matchMedia("(max-width: 760px)").matches;
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) lastFrame = performance.now();
+      audio.setPageVisible(!document.hidden);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const unlockPage = () => {
+      pageTargets.forEach((target) => {
+        target.inert = false;
+        target.removeAttribute("aria-hidden");
+      });
+      document.body.classList.remove("intro-locked");
+    };
+
+    const disposeThreeRuntime = () => {
+      if (scene) disposeScene(scene);
+      bloomPass?.dispose();
+      composer?.dispose();
+      renderer?.dispose();
+      renderer?.forceContextLoss();
+      scene = undefined;
+      renderer = undefined;
+      composer = undefined;
+      bloomPass = undefined;
+      renderThree = undefined;
+    };
+
+    const disposeRuntime = () => {
+      cancelAnimationFrame(frame);
+      audio.dispose();
+      disposeThreeRuntime();
+    };
+
+    const cleanup = () => {
+      if (disposed) return;
+      disposed = true;
+      disposeRuntime();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      soundButton.removeEventListener("click", onSoundClick);
+      unlockPage();
+      root.hidden = true;
+      document.documentElement.dataset.homeIntro = "seen";
+      activeCleanup = undefined;
+    };
+
+    const onSoundClick = async () => {
+      const enabled = await audio.toggle();
+      soundButton.setAttribute("aria-pressed", String(enabled));
+      soundLabel.textContent = enabled ? "关闭声音" : "开启声音";
+      root.toggleAttribute("data-sound-on", enabled);
+    };
+    soundButton.addEventListener("click", onSoundClick);
+    activeCleanup = cleanup;
+
+    const finish = () => {
+      if (finishing || disposed) return;
+      finishing = true;
+      root.dataset.state = "exiting";
+      const destination = document.querySelector<HTMLElement>("[data-home-stage] h1");
+      const finishCleanup = activeCleanup ?? cleanup;
+      finishCleanup();
+      document.dispatchEvent(new CustomEvent("home-intro:complete"));
+      if (destination) {
+        const hadTabIndex = destination.hasAttribute("tabindex");
+        destination.tabIndex = -1;
+        destination.focus({ preventScroll: true });
+        if (!hadTabIndex) destination.addEventListener("blur", () => destination.removeAttribute("tabindex"), { once: true });
+      } else if (previousFocus?.isConnected && !previousFocus.closest("[data-launch-intro]")) {
+        previousFocus.focus({ preventScroll: true });
+      }
+    };
+
+    const updateUi = (time: number) => {
+      const nextPhase = phases.findLastIndex((phase) => time >= phase.start);
+      if (nextPhase !== activePhase) {
+        activePhase = nextPhase;
+        const phase = phases[Math.max(0, nextPhase)];
+        root.dataset.phase = String(nextPhase + 1);
+        kicker.textContent = phase.kicker;
+        title.textContent = phase.title;
+        phaseLabel.textContent = `${String(nextPhase + 1).padStart(2, "0")} / 07`;
+      }
+      progress.style.width = `${clamp(time / DURATION) * 100}%`;
+      timeLabel.textContent = `00:${String(Math.max(0, Math.ceil(DURATION - time))).padStart(2, "0")}`;
+      root.style.setProperty("--intro-fade", String(1 - smooth(range(time, 23, 24))));
+      root.toggleAttribute("data-final-visible", time >= 20.5);
+    };
+
+    const setupFallback = () => {
+      fallbackCanvas.hidden = false;
+      canvas.hidden = true;
+      fallbackContext = fallbackCanvas.getContext("2d");
+      if (!earthImage) {
+        earthImage = new Image();
+        earthImage.src = "/intro/earth-blue-marble-2048.jpg";
+      }
+    };
+
+    const drawFallback = (time: number) => {
+      if (!fallbackContext) return;
+      const tableauIndex = Math.min(5, Math.floor(time / 4));
+      const tableauFrames = [1.3, 4.6, 8.5, 12.6, 17.5, 22];
+      const sceneTime = reducedMotion ? tableauFrames[tableauIndex] : time;
+      const width = root.clientWidth;
+      const height = root.clientHeight;
+      const ratio = Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.5);
+      if (fallbackCanvas.width !== Math.round(width * ratio) || fallbackCanvas.height !== Math.round(height * ratio)) {
+        fallbackCanvas.width = Math.round(width * ratio);
+        fallbackCanvas.height = Math.round(height * ratio);
+        fallbackCanvas.style.width = `${width}px`;
+        fallbackCanvas.style.height = `${height}px`;
+      }
+      fallbackContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const ctx = fallbackContext;
+      const background = ctx.createRadialGradient(width * 0.68, height * 0.44, 0, width * 0.68, height * 0.44, width * 0.78);
+      background.addColorStop(0, sceneTime > 19 ? "#101445" : "#071126");
+      background.addColorStop(0.42, "#020611");
+      background.addColorStop(1, "#000108");
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, width, height);
+
+      const seed = Math.floor(sceneTime * (reducedMotion ? 0 : 7));
+      for (let index = 0; index < (mobile ? 90 : 170); index += 1) {
+        const x = ((index * 173 + seed * 13) % 997) / 997 * width;
+        const y = ((index * 269 + seed * 7) % 991) / 991 * height;
+        const alpha = 0.25 + ((index * 31) % 70) / 100;
+        ctx.fillStyle = `rgba(190,215,255,${alpha})`;
+        ctx.fillRect(x, y, index % 17 === 0 ? 2 : 1, index % 17 === 0 ? 2 : 1);
+      }
+
+      if (sceneTime < 14.5) {
+        const depart = smooth(range(sceneTime, 6.5, 14.5));
+        const radius = Math.max(70, Math.min(width, height) * 0.34 * (1 - depart * 0.65));
+        const earthX = width * (0.43 - depart * 0.22);
+        const earthY = height * (0.88 + depart * 0.08);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(earthX, earthY, radius, 0, Math.PI * 2);
+        ctx.clip();
+        if (earthImage?.complete && earthImage.naturalWidth > 0) ctx.drawImage(earthImage, earthX - radius, earthY - radius, radius * 2, radius * 2);
+        else { ctx.fillStyle = "#174d86"; ctx.fillRect(earthX - radius, earthY - radius, radius * 2, radius * 2); }
+        ctx.restore();
+        ctx.strokeStyle = "rgba(90,180,255,.78)";
+        ctx.lineWidth = 5;
+        ctx.shadowColor = "#4aa7ff";
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        ctx.arc(earthX, earthY, radius + 3, Math.PI * 1.04, Math.PI * 1.96);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      const rocketProgress = smooth(range(sceneTime, 2.5, 14.5));
+      const warpProgress = smooth(range(sceneTime, 14.5, 20.5));
+      const rocketX = lerp(width * 0.56, width * 0.68, rocketProgress);
+      const rocketY = lerp(height * 0.76, height * 0.44, rocketProgress) - warpProgress * height * 0.08;
+      if (sceneTime >= 2.2) {
+      ctx.save();
+      ctx.translate(rocketX, rocketY);
+      ctx.rotate(lerp(0, Math.PI / 2, smooth(range(sceneTime, 9.5, 14.5))));
+      const scale = mobile ? 0.7 : 1;
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#edf3ff";
+      ctx.beginPath();
+      ctx.moveTo(0, -38);
+      ctx.lineTo(12, -18);
+      ctx.lineTo(12, 26);
+      ctx.lineTo(-12, 26);
+      ctx.lineTo(-12, -18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#6474ff";
+      ctx.fillRect(-14, 12, 28, 9);
+      if (sceneTime >= 2.5) {
+        const flame = 36 + Math.sin(sceneTime * 24) * 8 + warpProgress * 70;
+        const flameGradient = ctx.createLinearGradient(0, 24, 0, 24 + flame);
+        flameGradient.addColorStop(0, "#fff7d0");
+        flameGradient.addColorStop(0.32, "#4ca8ff");
+        flameGradient.addColorStop(1, "rgba(106,73,255,0)");
+        ctx.fillStyle = flameGradient;
+        ctx.beginPath();
+        ctx.moveTo(-8, 24);
+        ctx.lineTo(0, 24 + flame);
+        ctx.lineTo(8, 24);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+      }
+
+      if (sceneTime >= 14.5 && !reducedMotion) {
+        const centerX = width * 0.7;
+        const centerY = height * 0.45;
+        const intensity = smooth(range(sceneTime, 14.5, 17));
+        ctx.lineWidth = 1.2;
+        for (let index = 0; index < (mobile ? 70 : 130); index += 1) {
+          const angle = index * 2.399;
+          const length = 40 + ((index * 47) % 190) * intensity;
+          const start = 14 + ((index * 23) % 90);
+          ctx.strokeStyle = `hsla(${210 + index % 80},90%,72%,${0.12 + intensity * 0.46})`;
+          ctx.beginPath();
+          ctx.moveTo(centerX + Math.cos(angle) * start, centerY + Math.sin(angle) * start);
+          ctx.lineTo(centerX + Math.cos(angle) * (start + length), centerY + Math.sin(angle) * (start + length));
+          ctx.stroke();
+        }
+      }
+
+      if (sceneTime >= 20.5) {
+        const reveal = smooth(range(sceneTime, 20.5, 22.8));
+        ctx.save();
+        ctx.translate(width * 0.68, height * 0.44);
+        ctx.rotate(-0.35);
+        for (let index = 0; index < (mobile ? 320 : 620); index += 1) {
+          const radius = Math.pow(index / (mobile ? 320 : 620), 0.7) * Math.min(width, height) * 0.42 * reveal;
+          const angle = radius * 0.055 + (index % 4) * Math.PI / 2;
+          ctx.fillStyle = `hsla(${205 + index % 90},86%,${62 + (index % 25)}%,${0.22 + reveal * 0.54})`;
+          ctx.fillRect(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.28, 1.4, 1.4);
+        }
+        ctx.restore();
+      }
+
+      if (reducedMotion) {
+        const localTime = time - tableauIndex * 4;
+        const fadeIn = smooth(range(localTime, 0, 1.05));
+        const fadeOut = tableauIndex === 5 ? 1 : 1 - smooth(range(localTime, 3.05, 4));
+        ctx.fillStyle = `rgba(0,1,8,${1 - fadeIn * fadeOut})`;
+        ctx.fillRect(0, 0, width, height);
+      } else if (time < 2.5) {
+        ctx.fillStyle = `rgba(0,1,8,${1 - smooth(range(time, 0.15, 2.25))})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+    };
+
+    const setupThree = async (): Promise<boolean> => {
+      const [threeModule, composerModule, renderPassModule, bloomModule] = await Promise.all([
+        import("three"),
+        import("three/addons/postprocessing/EffectComposer.js"),
+        import("three/addons/postprocessing/RenderPass.js"),
+        import("three/addons/postprocessing/UnrealBloomPass.js"),
+      ]);
+      if (disposed) return false;
+      THREE = threeModule;
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.5));
+      renderer.setSize(root.clientWidth, root.clientHeight, false);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x01030a);
+      scene.fog = new THREE.FogExp2(0x01030a, 0.0065);
+      camera = new THREE.PerspectiveCamera(52, root.clientWidth / root.clientHeight, 0.1, 1000);
+      camera.position.set(0, 2, 12);
+
+      const ambient = new THREE.AmbientLight(0x7893c9, 0.45);
+      scene.add(ambient);
+      const sunlight = new THREE.DirectionalLight(0xfff5dd, 4.6);
+      sunlight.position.set(-12, 7, 8);
+      scene.add(sunlight);
+      const rimLight = new THREE.DirectionalLight(0x4c83ff, 3.2);
+      rimLight.position.set(10, -2, -8);
+      scene.add(rimLight);
+
+      const earthTexture = await new Promise<ThreeTypes.Texture | null>((resolve) => {
+        let settled = false;
+        const timeout = window.setTimeout(() => {
+          settled = true;
+          resolve(null);
+        }, 3500);
+        new THREE.TextureLoader().load(
+          "/intro/earth-blue-marble-2048.jpg",
+          (texture) => {
+            if (settled) {
+              texture.dispose();
+              return;
+            }
+            settled = true;
+            window.clearTimeout(timeout);
+            resolve(texture);
+          },
+          undefined,
+          () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            resolve(null);
+          },
+        );
+      });
+      if (disposed) {
+        earthTexture?.dispose();
+        disposeThreeRuntime();
+        return false;
+      }
+      if (!earthTexture) {
+        disposeThreeRuntime();
+        return false;
+      }
+      earthTexture.colorSpace = THREE.SRGBColorSpace;
+
+      const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture, color: 0xffffff, specular: 0x425d83, shininess: 16, transparent: true, opacity: 0 });
+      const earth = new THREE.Mesh(new THREE.SphereGeometry(8, mobile ? 48 : 72, mobile ? 32 : 48), earthMaterial);
+      const earthGroup = new THREE.Group();
+      earthGroup.position.set(0, -8.4, -18);
+      earthGroup.rotation.set(0.08, -1.25, -0.08);
+      earthGroup.add(earth);
+      const atmosphereMaterial = makeAtmosphereMaterial();
+      const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(8.36, 64, 42), atmosphereMaterial);
+      earthGroup.add(atmosphere);
+      const cloudTexture = createCloudTexture();
+      const cloudMaterial = new THREE.MeshPhongMaterial({
+        color: 0xe8f4ff,
+        alphaMap: cloudTexture,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const cloudShell = new THREE.Mesh(new THREE.SphereGeometry(8.1, 48, 32), cloudMaterial);
+      earthGroup.add(cloudShell);
+      scene.add(earthGroup);
+
+      const starField = createStars(mobile ? 1400 : 3600);
+      scene.add(starField);
+      const { galaxy, material: galaxyMaterial } = createGalaxy(mobile ? 2400 : 5400);
+      scene.add(galaxy);
+      const { lines: warpLines, material: warpMaterial, positions: warpPositions } = createWarpLines(mobile ? 260 : 720);
+      warpLines.visible = false;
+      scene.add(warpLines);
+      const rocketParts = createRocket();
+      rocketParts.rocket.position.set(2.45, -0.42, -13.2);
+      rocketParts.rocket.visible = false;
+      scene.add(rocketParts.rocket);
+      const smoke = createLaunchParticles(mobile ? 80 : 190, 0x8791a8, mobile ? 0.34 : 0.48);
+      const debris = createLaunchParticles(mobile ? 34 : 86, 0xffb45f, mobile ? 0.1 : 0.15, true);
+      scene.add(smoke.points, debris.points);
+
+      if (!mobile) {
+        composer = new composerModule.EffectComposer(renderer);
+        composer.addPass(new renderPassModule.RenderPass(scene, camera));
+        bloomPass = new bloomModule.UnrealBloomPass(new THREE.Vector2(root.clientWidth, root.clientHeight), 0.72, 0.38, 0.79);
+        bloomPass.threshold = 0.72;
+        bloomPass.strength = 0.72;
+        bloomPass.radius = 0.36;
+        composer.addPass(bloomPass);
+      }
+
+      const resize = () => {
+        if (!renderer || !camera) return;
+        const width = root.clientWidth;
+        const height = root.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+        composer?.setSize(width, height);
+      };
+      const resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(root);
+
+      canvas.addEventListener("webglcontextlost", (event) => {
+        event.preventDefault();
+        if (disposed) return;
+        resizeObserver.disconnect();
+        setupFallback();
+        renderThree = undefined;
+      }, { once: true });
+
+      const target = new THREE.Vector3();
+      renderThree = (time, delta) => {
+        if (!renderer || !camera || !scene) return;
+        const earthReveal = smooth(range(time, 0.15, 2.35));
+        earthGroup.rotation.y += delta * 0.035;
+        cloudShell.rotation.y += delta * 0.014;
+        starField.rotation.y = time * 0.006;
+        earthMaterial.opacity = earthReveal;
+        cloudMaterial.opacity = earthReveal * 0.2;
+        atmosphereMaterial.uniforms.reveal.value = earthReveal;
+        sunlight.intensity = lerp(0.18, 4.6, earthReveal);
+        sunlight.position.x = lerp(-19, -7, earthReveal);
+        (starField.material as ThreeTypes.PointsMaterial).opacity = lerp(0.08, 0.86, earthReveal);
+
+        const ignition = smooth(range(time, 2.5, 3.4));
+        const engineFade = 1 - smooth(range(time, 20.5, 22.6));
+        rocketParts.rocket.visible = time >= 2.2;
+        rocketParts.outerFlameMaterial.opacity = ignition * engineFade * (0.54 + Math.sin(time * 34) * 0.16);
+        rocketParts.innerFlameMaterial.opacity = ignition * engineFade * (0.72 + Math.sin(time * 43) * 0.18);
+        rocketParts.engineLight.intensity = ignition * engineFade * (18 + Math.sin(time * 29) * 4);
+        rocketParts.outerFlame.scale.y = 0.72 + Math.sin(time * 27) * 0.14 + range(time, 14.5, 17) * 1.6;
+        rocketParts.innerFlame.scale.y = 0.8 + Math.sin(time * 37) * 0.1 + range(time, 14.5, 17) * 1.2;
+
+        const launchCloud = ignition * (1 - smooth(range(time, 6.1, 8)));
+        smoke.points.visible = launchCloud > 0.01;
+        smoke.material.opacity = launchCloud * 0.5;
+        for (let index = 0; index < smoke.seeds.length; index += 1) {
+          const seed = smoke.seeds[index];
+          const age = (time * 0.24 + seed) % 1;
+          smoke.positions[index * 3] = 2.45 + Math.sin(seed * 47.3) * age * (1.2 + seed * 2.6);
+          smoke.positions[index * 3 + 1] = -1.45 - age * (1.3 + seed * 3.2);
+          smoke.positions[index * 3 + 2] = -13.2 + Math.cos(seed * 39.7) * age * (0.9 + seed * 1.8);
+        }
+        (smoke.points.geometry.getAttribute("position") as ThreeTypes.BufferAttribute).needsUpdate = true;
+
+        debris.points.visible = launchCloud > 0.04;
+        debris.material.opacity = launchCloud * 0.88;
+        for (let index = 0; index < debris.seeds.length; index += 1) {
+          const seed = debris.seeds[index];
+          const age = (time * 0.68 + seed) % 1;
+          debris.positions[index * 3] = 2.45 + Math.cos(seed * 91.7) * age * (2.2 + seed * 3.8);
+          debris.positions[index * 3 + 1] = -1.2 + Math.sin(seed * 63.1) * age * 2.4 - age * age * 2.2;
+          debris.positions[index * 3 + 2] = -13.2 + Math.sin(seed * 117.5) * age * (1.4 + seed * 2.5);
+        }
+        (debris.points.geometry.getAttribute("position") as ThreeTypes.BufferAttribute).needsUpdate = true;
+
+        if (time < 2.5) {
+          const p = smooth(range(time, 0, 2.5));
+          earthGroup.scale.setScalar(0.9 + p * 0.1);
+          camera.position.set(0, 2, 12);
+          target.set(0, -3.2, -17.5);
+          camera.fov = lerp(58, 50, p);
+        } else if (time < 6.5) {
+          const p = smooth(range(time, 2.5, 6.5));
+          rocketParts.rocket.position.set(lerp(2.45, 2.2, p), lerp(-0.42, 10, p), lerp(-13.2, -18, p));
+          camera.position.set(lerp(0, 5.2, p), lerp(2, 7.2, p), lerp(12, 1.4, p));
+          target.copy(rocketParts.rocket.position).add(new THREE.Vector3(0, 1.4, 0));
+          camera.fov = lerp(50, 47, p);
+        } else if (time < 10.5) {
+          const p = smooth(range(time, 6.5, 10.5));
+          rocketParts.rocket.position.set(lerp(2.2, 0, p), lerp(10, 28, p), lerp(-18, -42, p));
+          rocketParts.rocket.rotation.x = lerp(0, -0.46, p);
+          camera.position.set(lerp(5.2, 4, p), lerp(7.2, 23, p), lerp(1.4, -27, p));
+          target.copy(rocketParts.rocket.position).add(new THREE.Vector3(0, 1.2, -1));
+          camera.fov = lerp(47, 54, p);
+        } else if (time < 14.5) {
+          const p = smooth(range(time, 10.5, 14.5));
+          rocketParts.rocket.position.set(0, lerp(28, 30, p), lerp(-42, -70, p));
+          rocketParts.rocket.rotation.x = lerp(-0.46, -Math.PI / 2, p);
+          camera.position.set(lerp(4, 0, p), lerp(23, 30, p), lerp(-27, -56, p));
+          target.copy(rocketParts.rocket.position).add(new THREE.Vector3(0, 0, -4));
+          camera.fov = lerp(54, 51, p);
+        } else if (time < 20.5) {
+          const p = smooth(range(time, 14.5, 20.5));
+          rocketParts.rocket.position.set(0, 30, lerp(-70, -82, p));
+          rocketParts.rocket.rotation.x = -Math.PI / 2;
+          camera.position.set(0, 30, lerp(-56, -64, p));
+          target.set(0, 30, -105);
+          camera.fov = 51 + Math.sin(p * Math.PI) * 24;
+          warpLines.visible = true;
+          warpMaterial.opacity = Math.sin(p * Math.PI) * 0.78;
+          const attribute = warpLines.geometry.getAttribute("position") as ThreeTypes.BufferAttribute;
+          for (let index = 0; index < warpPositions.length / 6; index += 1) {
+            let z = warpPositions[index * 6 + 2] + delta * (34 + p * 90);
+            if (z > 8) z = -125;
+            warpPositions[index * 6 + 2] = z;
+            warpPositions[index * 6 + 5] = z + 7 + p * 22;
+          }
+          attribute.needsUpdate = true;
+        } else {
+          const p = smooth(range(time, 20.5, 23.3));
+          warpMaterial.opacity = (1 - p) * 0.3;
+          galaxyMaterial.opacity = p * 0.96;
+          galaxy.rotation.z += delta * 0.035;
+          rocketParts.rocket.position.set(0, 30, lerp(-82, -112, p));
+          rocketParts.rocket.scale.setScalar(1 - p * 0.72);
+          camera.position.set(0, 30, lerp(-64, -74, p));
+          target.set(0, 30, -145);
+          camera.fov = lerp(62, 46, p);
+        }
+
+        if (!reducedMotion && time >= 2.5 && time < 10.5) {
+          const shake = (1 - range(time, 8.8, 10.5)) * 0.045;
+          camera.position.x += Math.sin(time * 38) * shake;
+          camera.position.y += Math.cos(time * 31) * shake;
+        }
+        camera.updateProjectionMatrix();
+        camera.lookAt(target);
+        if (composer) composer.render(); else renderer.render(scene, camera);
+      };
+
+      const previousCleanup = activeCleanup;
+      activeCleanup = () => {
+        resizeObserver.disconnect();
+        previousCleanup?.();
+      };
+      if (disposed) {
+        resizeObserver.disconnect();
+        disposeThreeRuntime();
+        return false;
+      }
+      renderThree(elapsed, 0);
+      fallbackCanvas.hidden = true;
+      canvas.hidden = false;
+      return true;
+    };
+
+    setupFallback();
+    root.dataset.state = "playing";
+
+    const tick = (now: number) => {
+      if (disposed) return;
+      try {
+        const deltaMs = document.hidden ? 0 : Math.min(1000, Math.max(0, now - lastFrame));
+        const renderDeltaMs = Math.min(50, deltaMs);
+        lastFrame = now;
+        elapsed += deltaMs / 1000;
+        updateUi(elapsed);
+        audio.update(elapsed);
+        if (renderThree) renderThree(elapsed, renderDeltaMs / 1000);
+        else drawFallback(elapsed);
+        if (elapsed >= DURATION) finish();
+        else frame = requestAnimationFrame(tick);
+      } catch {
+        finish();
+      }
+    };
+    frame = requestAnimationFrame(tick);
+
+    if (!reducedMotion) {
+      void setupThree().catch(() => {
+        if (!disposed) setupFallback();
+      });
+    }
+  };
+
+  document.addEventListener("astro:page-load", startIntro);
+  document.addEventListener("astro:before-swap", () => activeCleanup?.());
+</script>
+
+<style>
+  .launch-intro {
+    --intro-fade: 1;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    overflow: hidden;
+    background: #01030a;
+    color: #edf3ff;
+    opacity: var(--intro-fade);
+    isolation: isolate;
+  }
+
+  :global(html[data-home-intro="pending"]) .launch-intro,
+  :global(html[data-home-intro="playing"]) .launch-intro {
+    display: block;
+  }
+
+  :global(html[data-home-intro="pending"] .site-header),
+  :global(html[data-home-intro="pending"] [data-home-stage]),
+  :global(html[data-home-intro="pending"] .site-footer) {
+    visibility: hidden;
+  }
+
+  :global(body.intro-locked) { overflow: hidden; }
+
+  .launch-intro[hidden] { display: none !important; }
+  .launch-intro__canvas,
+  .launch-intro__fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .launch-intro__grade { position: absolute; inset: 0; background: radial-gradient(ellipse at 65% 45%, transparent 18%, rgba(1,3,10,.14) 52%, rgba(0,1,7,.82) 115%), linear-gradient(180deg, rgba(1,3,10,.4), transparent 28%, transparent 68%, rgba(1,3,10,.76)); pointer-events: none; }
+  .launch-intro__noise { position: absolute; inset: 0; opacity: .1; background-image: radial-gradient(rgba(210,224,255,.3) .55px, transparent .7px); background-size: 5px 5px; mix-blend-mode: screen; pointer-events: none; }
+  .launch-intro__topbar { position: absolute; left: clamp(20px, 4vw, 64px); right: clamp(20px, 4vw, 64px); top: clamp(22px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .launch-intro__mission { display: flex; align-items: center; gap: 11px; color: rgba(190,207,239,.66); font: 650 8px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .2em; }
+  .launch-intro__status-dot { width: 6px; height: 6px; border-radius: 50%; background: #5ff1e6; box-shadow: 0 0 14px #5ff1e6; }
+  .launch-intro__sound { display: inline-flex; min-height: 38px; align-items: center; gap: 10px; border: 1px solid rgba(124,151,207,.28); border-radius: 999px; padding: 0 14px; background: rgba(8,14,31,.62); color: rgba(220,230,251,.76); backdrop-filter: blur(18px); cursor: pointer; font: 650 9px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .12em; transition: border-color .25s ease, color .25s ease, background .25s ease; }
+  .launch-intro__sound:hover { border-color: rgba(115,153,255,.58); color: white; background: rgba(15,25,52,.76); }
+  .launch-intro__sound:focus-visible { outline: 2px solid #79b4ff; outline-offset: 3px; }
+  .launch-intro__sound-bars { display: flex; height: 13px; align-items: end; gap: 2px; }
+  .launch-intro__sound-bars i { width: 2px; height: 4px; border-radius: 2px; background: #8096c8; }
+  .launch-intro__sound-bars i:nth-child(2) { height: 9px; }
+  .launch-intro__sound-bars i:nth-child(3) { height: 6px; }
+  [data-sound-on] .launch-intro__sound-bars i { background: #64e9df; animation: sound-wave .75s ease-in-out infinite alternate; }
+  [data-sound-on] .launch-intro__sound-bars i:nth-child(2) { animation-delay: -.25s; }
+  [data-sound-on] .launch-intro__sound-bars i:nth-child(3) { animation-delay: -.5s; }
+  .launch-intro__caption { position: absolute; left: clamp(22px, 7vw, 110px); bottom: clamp(100px, 15vh, 160px); max-width: min(680px, 76vw); text-shadow: 0 4px 34px rgba(0,0,0,.68); }
+  .launch-intro__caption span { display: block; color: #77a5ff; font: 720 9px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .22em; text-transform: uppercase; }
+  .launch-intro__caption strong { display: block; margin-top: 15px; font-size: clamp(1.8rem, 4vw, 4.6rem); font-weight: 650; line-height: 1.03; letter-spacing: -.045em; }
+  .launch-intro__final { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; text-align: center; opacity: 0; transform: scale(.96); transition: opacity 1s ease, transform 1.4s cubic-bezier(.2,.8,.2,1); pointer-events: none; text-shadow: 0 5px 45px #000; }
+  [data-final-visible] .launch-intro__caption { opacity: 0; transform: translateY(16px); transition: opacity .8s ease, transform .8s ease; }
+  [data-final-visible] .launch-intro__final { opacity: 1; transform: scale(1); }
+  .launch-intro__final span { color: rgba(170,194,246,.72); font: 700 9px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .3em; }
+  .launch-intro__final strong { margin-top: 22px; font-size: clamp(2.6rem, 7vw, 7.2rem); line-height: .96; letter-spacing: -.065em; background: linear-gradient(105deg, #fff, #8db8ff 42%, #ae8cff 74%, #70eee4); background-clip: text; color: transparent; }
+  .launch-intro__footer { position: absolute; left: clamp(20px, 4vw, 64px); right: clamp(20px, 4vw, 64px); bottom: clamp(24px, 4vw, 48px); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; color: rgba(145,164,204,.64); font: 650 8px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .16em; }
+  .launch-intro__progress { height: 1px; overflow: visible; background: rgba(103,129,184,.24); }
+  .launch-intro__progress i { display: block; width: 0; height: 1px; background: linear-gradient(90deg, #4f7fff, #a063ff, #62e7df); box-shadow: 0 0 14px rgba(100,142,255,.8); }
+  .launch-intro[data-state="loading"] .launch-intro__progress i { width: 8%; animation: calibrate 1.8s ease-in-out infinite alternate; }
+  .launch-intro[data-state="exiting"] { pointer-events: none; }
+
+  @keyframes sound-wave { to { transform: scaleY(1.7); } }
+  @keyframes calibrate { to { transform: translateX(720%); } }
+
+  @media (max-width: 700px) {
+    .launch-intro__mission { max-width: 50vw; line-height: 1.45; }
+    .launch-intro__caption { left: 20px; right: 20px; bottom: 112px; max-width: none; }
+    .launch-intro__caption strong { font-size: clamp(1.9rem, 9vw, 3.1rem); }
+    .launch-intro__final strong { font-size: clamp(2.9rem, 15vw, 5rem); }
+    .launch-intro__footer { gap: 10px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .launch-intro *, .launch-intro *::before, .launch-intro *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>

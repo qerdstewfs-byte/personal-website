@@ -11,11 +11,13 @@
   "dependencies": {
     "@tailwindcss/vite": "latest",
     "astro": "latest",
-    "tailwindcss": "latest"
+    "tailwindcss": "latest",
+    "three": "0.185.1"
   },
   "devDependencies": {
     "@astrojs/check": "latest",
     "@astrojs/ts-plugin": "latest",
+    "@types/three": "0.185.1",
     "typescript": "latest"
   }
 }

@@ -33,9 +33,31 @@
   };
 
   let stopCosmos: (() => void) | undefined;
+  let waitingForIntro = false;
+
+  const clearIntroWait = () => {
+    document.removeEventListener("home-intro:complete", onIntroComplete);
+    waitingForIntro = false;
+  };
+
+  const onIntroComplete = () => {
+    clearIntroWait();
+    startCosmos();
+  };
 
   const startCosmos = () => {
     stopCosmos?.();
+
+    const introState = document.documentElement.dataset.homeIntro;
+    if (introState === "pending" || introState === "playing") {
+      if (!waitingForIntro) {
+        waitingForIntro = true;
+        document.addEventListener("home-intro:complete", onIntroComplete, { once: true });
+      }
+      return;
+    }
+
+    clearIntroWait();
 
     const canvas = document.querySelector<HTMLCanvasElement>("[data-cosmos-canvas]");
     const cosmos = document.querySelector<HTMLElement>("[data-cosmos]");
@@ -192,5 +214,8 @@
   };
 
   document.addEventListener("astro:page-load", startCosmos);
-  document.addEventListener("astro:before-swap", () => stopCosmos?.());
+  document.addEventListener("astro:before-swap", () => {
+    stopCosmos?.();
+    clearIntroWait();
+  });
 </script>

@@ -19,6 +19,17 @@ const {
 <html lang="zh-CN" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
+    <script is:inline data-astro-rerun>
+      (() => {
+        const key = "home-intro-v1";
+        const isHome = window.location.pathname.replace(/\/$/, "") === "";
+        let seen = false;
+        try {
+          seen = sessionStorage.getItem(key) === "1";
+        } catch {}
+        document.documentElement.dataset.homeIntro = isHome && !seen ? "pending" : "seen";
+      })();
+    </script>
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
