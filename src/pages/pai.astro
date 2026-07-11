@@ -1,0 +1,56 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const topics = [
+  {
+    title: "成像原理",
+    description: "光声效应的物理基础：脉冲激光激发、热弹性膨胀与超声信号的产生和传播。",
+  },
+  {
+    title: "信号采集与系统",
+    description: "激光器、超声换能器与数据采集系统的组成，以及常见的光声成像系统结构（PACT / PAM）。",
+  },
+  {
+    title: "图像重建",
+    description: "延时叠加（DAS）、反投影、基于模型的重建方法，以及深度学习在重建中的应用。",
+  },
+  {
+    title: "仿真与实验",
+    description: "使用 k-Wave 等工具做正向仿真和重建实验，验证算法并理解成像流程。",
+  },
+];
+---
+
+<BaseLayout
+  title="光声成像（PAI） | 睿睿"
+  description="光声成像（Photoacoustic Imaging, PAI）方向的学习与研究记录：成像原理、系统、图像重建与仿真实验。"
+>
+  <section class="space-y-4">
+    <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Photoacoustic Imaging</p>
+    <h1 class="text-4xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50 sm:text-5xl">光声成像（PAI）</h1>
+    <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
+      光声成像结合了光学成像的高对比度和超声成像的高穿透深度，是我目前的主要研究方向。这里会持续记录我在成像原理、系统搭建、图像重建和仿真实验方面的学习与进展。
+    </p>
+  </section>
+
+  <section class="mt-16 space-y-6">
+    <h2 class="text-2xl font-semibold">关注的内容</h2>
+    <div class="grid gap-5 md:grid-cols-2">
+      {
+        topics.map((topic) => (
+          <div class="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+            <h3 class="text-lg font-semibold">{topic.title}</h3>
+            <p class="mt-2 leading-7 text-zinc-600 dark:text-zinc-300">{topic.description}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-16 rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+    <h2 class="text-2xl font-semibold">进展记录</h2>
+    <p class="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-300">
+      后续会在这里补充具体的学习笔记、仿真结果和实验记录。
+    </p>
+  </section>
+</BaseLayout>

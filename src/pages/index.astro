@@ -1,102 +1,50 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import ProjectCard from "../components/ProjectCard.astro";
 
-const featuredProjects = [
+const focusPoints = [
   {
-    title: "光声成像仿真",
-    description: "围绕光声信号产生、传播与重建流程做基础仿真实验，用于理解成像机理和后续算法验证。",
-    tags: ["Photoacoustic", "MATLAB", "Python"],
-    status: "学习推进中",
-    href: "/projects/photoacoustic-simulation",
+    title: "成像原理",
+    description: "光声效应、激光激发与超声信号产生的物理机制。",
   },
   {
-    title: "Qt 上位机开发",
-    description: "整理串口通信、图像显示、参数配置和实验控制等常见上位机功能，沉淀可复用的工程界面经验。",
-    tags: ["Qt", "C++", "Serial"],
-    status: "持续完善",
-    href: "/projects/qt-control-panel",
+    title: "图像重建",
+    description: "从延时叠加、反投影到基于模型和深度学习的重建方法。",
   },
   {
-    title: "树莓派视觉系统",
-    description: "基于树莓派搭建轻量视觉采集与处理流程，关注硬件连接、图像获取和边缘端部署。",
-    tags: ["Raspberry Pi", "OpenCV", "Linux"],
-    status: "原型阶段",
-    href: "/projects/raspberry-pi-vision",
+    title: "仿真实验",
+    description: "基于 k-Wave 等工具的正向仿真与重建算法验证。",
   },
 ];
-
-const researchInterests = ["医学影像", "光声成像", "深度学习", "嵌入式视觉", "Qt 工程软件开发"];
-const techStack = ["Python", "PyTorch", "OpenCV", "Qt / C++", "Linux", "Astro", "Tailwind CSS"];
-const learningTopics = ["医学影像基础", "图像重建方法", "PyTorch 实验流程", "嵌入式视觉部署", "Qt 上位机架构"];
 ---
 
 <BaseLayout
-  title="睿睿 | 个人学术技术主页"
-  description="睿睿的个人学术技术主页，记录医学影像、光声成像、深度学习、嵌入式视觉和 Qt 工程软件开发。"
+  title="睿睿 | 光声成像（PAI）"
+  description="睿睿的个人主页，专注光声成像（Photoacoustic Imaging, PAI）方向的学习与研究。"
 >
   <section class="space-y-7">
     <div class="space-y-4">
-      <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Personal academic portfolio</p>
-      <h1 class="text-4xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50 sm:text-5xl">你好，我是睿睿</h1>
+      <p class="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">Photoacoustic Imaging</p>
+      <h1 class="text-4xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50 sm:text-5xl">光声成像（PAI）</h1>
       <p class="max-w-3xl text-xl leading-9 text-zinc-700 dark:text-zinc-200">
-        我关注医学影像、光声成像、深度学习、嵌入式视觉和 Qt 工程软件开发。
-      </p>
-      <p class="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-        这是我的个人学术技术主页，用于记录学习、展示项目、整理科研方向和沉淀工程实践。
+        你好，我是睿睿。我目前专注于光声成像方向，这里记录我在成像原理、图像重建和仿真实验方面的学习与研究。
       </p>
     </div>
     <div class="flex flex-wrap gap-3">
-      <a href="/projects" class="rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white no-underline hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200">查看项目</a>
-      <a href="/resume" class="rounded-md border border-zinc-300 px-5 py-3 text-sm font-medium no-underline hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">查看简历</a>
+      <a href="/pai" class="rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white no-underline hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200">进入光声成像</a>
     </div>
   </section>
 
   <section class="mt-16 space-y-6">
-    <div>
-      <h2 class="text-2xl font-semibold">研究兴趣</h2>
-      <p class="mt-2 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-300">
-        目前更关注影像技术和工程实现之间的连接：从成像原理、图像重建到模型实验，再到可以运行在真实设备上的软件与视觉系统。
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-2">
-      {researchInterests.map((item) => <span class="rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">{item}</span>)}
-    </div>
-  </section>
-
-  <section class="mt-16 space-y-6">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold">精选项目</h2>
-        <p class="mt-2 text-zinc-600 dark:text-zinc-300">先展示正在学习和整理中的项目方向，后续会逐步补充细节、截图和代码说明。</p>
-      </div>
-      <a href="/projects" class="text-sm font-medium no-underline hover:underline">查看全部项目</a>
-    </div>
+    <h2 class="text-2xl font-semibold">当前关注</h2>
     <div class="grid gap-5 md:grid-cols-3">
-      {featuredProjects.map((project) => <ProjectCard {...project} />)}
+      {
+        focusPoints.map((point) => (
+          <div class="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+            <h3 class="text-lg font-semibold">{point.title}</h3>
+            <p class="mt-2 leading-7 text-zinc-600 dark:text-zinc-300">{point.description}</p>
+          </div>
+        ))
+      }
     </div>
-  </section>
-
-  <section class="mt-16 grid gap-8 md:grid-cols-2">
-    <div class="space-y-4">
-      <h2 class="text-2xl font-semibold">技术栈</h2>
-      <div class="flex flex-wrap gap-2">
-        {techStack.map((item) => <span class="rounded-full border border-zinc-200 px-4 py-2 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">{item}</span>)}
-      </div>
-    </div>
-    <div class="space-y-4">
-      <h2 class="text-2xl font-semibold">最近学习方向</h2>
-      <ul class="space-y-3 text-zinc-600 dark:text-zinc-300">
-        {learningTopics.map((item) => <li class="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">{item}</li>)}
-      </ul>
-    </div>
-  </section>
-
-  <section class="mt-16 rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
-    <h2 class="text-2xl font-semibold">联系方式入口</h2>
-    <p class="mt-3 max-w-3xl leading-7 text-zinc-600 dark:text-zinc-300">
-      如果需要交流项目、科研学习或工程实践，可以先通过邮箱联系。这里暂时使用公开占位邮箱，后续可替换为真实的学术或工作邮箱。
-    </p>
-    <a href="mailto:example@example.com" class="mt-4 inline-flex rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium no-underline hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">example@example.com</a>
   </section>
 </BaseLayout>
