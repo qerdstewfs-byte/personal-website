@@ -1,0 +1,89 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const imagingStages = [
+  {
+    title: "光能吸收",
+    description: "脉冲光进入组织后，不同组分依据自身吸收特性沉积能量。吸收差异是光声图像产生对比度的起点。",
+  },
+  {
+    title: "热弹性膨胀",
+    description: "被吸收的光能引起瞬时温升和微小体积膨胀，进而产生向外传播的宽带超声波。",
+  },
+  {
+    title: "信号探测",
+    description: "超声换能器在不同位置记录到达时间与幅值。带宽、采样率和空间布局共同影响可恢复的信息。",
+  },
+  {
+    title: "图像重建",
+    description: "重建算法根据声波传播模型，把多通道时域信号映射回空间中的光学吸收分布。",
+  },
+];
+
+const characteristics = [
+  "结合光学吸收对比度与超声传播深度",
+  "可关注血红蛋白等内源性吸收体",
+  "成像质量同时受光照、声学与采样系统影响",
+  "仿真、实验标定和重建算法需要协同设计",
+];
+---
+
+<BaseLayout
+  title="光声成像 | 睿睿"
+  description="了解光声成像从光能吸收、热弹性膨胀、声波探测到图像重建的完整链路。"
+>
+  <section class="page-hero">
+    <div class="page-frame" data-reveal>
+      <p class="eyebrow">Photoacoustic Imaging · Light in · Sound out</p>
+      <h1 class="page-hero__title">用声音读取光的痕迹，<br /><span class="gradient-text">重建组织内部的吸收分布。</span></h1>
+      <p class="page-hero__copy">
+        光声成像是一种融合光学激发与超声探测的成像方式。它利用组织对光的选择性吸收产生超声信号，再通过采集与重建形成图像。
+      </p>
+    </div>
+  </section>
+
+  <section class="page-content">
+    <div class="page-frame">
+      <div class="section-head" data-reveal>
+        <div>
+          <p class="section-kicker">01 / Principle</p>
+          <h2 class="section-heading">从光脉冲到图像的<br />四个关键阶段。</h2>
+        </div>
+      </div>
+      <div class="cards-grid cards-grid--two">
+        {imagingStages.map((stage, index) => (
+          <article class="topic-card" data-reveal data-reveal-delay={String(index % 2)}>
+            <span class="topic-card__index">0{index + 1} / IMAGING STAGE</span>
+            <h2>{stage.title}</h2>
+            <p>{stage.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block section-block--compact">
+    <div class="page-frame split-grid">
+      <article class="content-card" data-reveal>
+        <p class="section-kicker">02 / Why it matters</p>
+        <h3>光声成像的特点</h3>
+        <ol class="learning-list">
+          {characteristics.map((item) => <li>{item}</li>)}
+        </ol>
+      </article>
+      <article class="content-card" data-reveal data-reveal-delay="1">
+        <p class="section-kicker">03 / Current focus</p>
+        <h3>当前关注</h3>
+        <p class="section-copy">
+          现阶段主要梳理光声效应、声传播模型、传感器采样与基础重建方法之间的关系，并通过仿真逐步建立可验证的完整流程。
+        </p>
+        <div class="stack-cloud">
+          <span class="stack-pill">光声效应</span>
+          <span class="stack-pill">声传播</span>
+          <span class="stack-pill">信号处理</span>
+          <span class="stack-pill">图像重建</span>
+        </div>
+      </article>
+    </div>
+  </section>
+</BaseLayout>

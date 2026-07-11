@@ -11,7 +11,7 @@ interface Props {
 
 const {
   title,
-  description = "A personal academic and technical website for projects, research, notes, and professional work.",
+  description = "睿睿的个人主页，聚焦光声成像的原理、学习与实践。",
 } = Astro.props;
 ---
 
@@ -25,7 +25,7 @@ const {
     <link rel="icon" type="image/png" href="/avatar.png" />
     <title>{title}</title>
     <ClientRouter />
-    <meta name="theme-color" content="#030611" />
+    <meta name="theme-color" content="#f6f8fc" />
   </head>
   <body>
     <div class="site-ambient" aria-hidden="true"></div>
@@ -55,7 +55,7 @@ const {
           revealItems.forEach((item) => observer.observe(item));
         }
 
-        document.querySelectorAll<HTMLElement>(".glass-card, .project-card, .topic-card, .content-card").forEach((card) => {
+        document.querySelectorAll<HTMLElement>(".glass-card, .topic-card, .content-card").forEach((card) => {
           card.addEventListener("pointermove", (event) => {
             const rect = card.getBoundingClientRect();
             card.style.setProperty("--mouse-x", `${event.clientX - rect.left}px`);

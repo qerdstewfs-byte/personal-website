@@ -1,12 +1,12 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 const facets = [
-  { title: "学习方向", description: "医学影像、光声成像、深度学习和图像重建。" },
-  { title: "工程实践", description: "Qt 上位机、嵌入式视觉、图像处理和实验工具开发。" },
+  { title: "当前方向", description: "聚焦光声成像原理、声学传播、信号采集与图像重建。" },
+  { title: "验证方式", description: "通过仿真、数据分析与可复现实验逐步理解完整成像链路。" },
   { title: "工作方式", description: "从原理出发，以实验验证，用工程实现完成闭环。" },
 ];
 ---
-<BaseLayout title="关于我 | 睿睿" description="关于睿睿的个人介绍，关注 AI、医学影像、嵌入式视觉和工程软件开发。">
+<BaseLayout title="关于我 | 睿睿" description="关于睿睿的个人介绍，当前聚焦光声成像的学习与实践。">
   <section class="page-hero">
     <div class="page-frame" data-reveal>
       <p class="eyebrow">About · Direction · Practice</p>
@@ -16,9 +16,9 @@ const facets = [
   <section class="page-content">
     <div class="page-frame">
       <article class="glass-card prose-panel" data-reveal>
-        <p>我正在学习 AI、医学影像、嵌入式视觉和工程软件开发，希望把科研学习与真实工程项目结合起来，逐步积累自己的项目、技术能力和研究方向。</p>
-        <p>这个网站是一个长期整理空间：一部分记录学习路线和阶段性理解，一部分展示项目实践，也持续沉淀科研方向、工具链和工程经验。</p>
-        <p>相比包装自己，我更希望这里能清楚地呈现正在做什么、学到了什么，以及下一步准备往哪里深入。</p>
+        <p>我正在围绕光声成像持续学习，希望从物理机制、数学模型和信号处理出发，逐步理解一套成像系统如何把测量数据转化为可信的图像。</p>
+        <p>这个网站保留最重要的内容：我是谁，以及我对光声成像这一方向的理解。随着学习深入，相关页面会持续补充更清晰的原理说明和阶段性认识。</p>
+        <p>相比堆叠栏目，我更希望这里能够简洁、准确地呈现当前真正关注的问题。</p>
       </article>
       <div class="cards-grid" style="margin-top: 18px;">
         {facets.map((facet, index) => (

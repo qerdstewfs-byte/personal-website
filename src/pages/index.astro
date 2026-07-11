@@ -1,98 +1,47 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import ProjectCard from "../components/ProjectCard.astro";
-import CosmicCanvas from "../components/CosmicCanvas.astro";
 
-const featuredProjects = [
-  {
-    title: "光声成像仿真",
-    description: "从信号产生、传播到图像重建，搭建可复现的仿真实验，理解成像机理并验证算法。",
-    tags: ["Photoacoustic", "MATLAB", "Python"],
-    status: "学习推进中",
-    href: "/projects/photoacoustic-simulation",
-  },
-  {
-    title: "Qt 上位机开发",
-    description: "将设备通信、实时数据、参数控制和实验流程整合进可靠、清晰的桌面工程界面。",
-    tags: ["Qt", "C++", "Serial"],
-    status: "持续完善",
-    href: "/projects/qt-control-panel",
-  },
-  {
-    title: "树莓派视觉系统",
-    description: "面向真实硬件环境，完成视觉采集、图像处理与轻量模型部署的端到端验证。",
-    tags: ["Raspberry Pi", "OpenCV", "Linux"],
-    status: "原型阶段",
-    href: "/projects/raspberry-pi-vision",
-  },
-];
-
-const interests = ["医学影像", "光声成像", "深度学习", "嵌入式视觉"];
-const techStack = ["Python", "PyTorch", "OpenCV", "Qt / C++", "Linux", "Astro", "Tailwind CSS"];
-const learningTopics = ["医学影像基础", "图像重建方法", "PyTorch 实验流程", "嵌入式视觉部署"];
-const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Computer Vision", "Embedded Systems", "Engineering UI"];
+const focusAreas = ["光声效应", "声波传播", "数据采集", "图像重建"];
+const tickerItems = ["Photoacoustic Imaging", "Optical Absorption", "Acoustic Propagation", "Signal Acquisition", "Image Reconstruction"];
 ---
 
 <BaseLayout
-  title="睿睿 | 医学影像 · AI · 工程系统"
-  description="睿睿的个人学术技术主页，探索医学影像、光声成像、深度学习、嵌入式视觉和工程软件。"
+  title="睿睿 | 光声成像"
+  description="睿睿的个人主页，聚焦光声成像的物理原理、信号采集、仿真与图像重建。"
 >
-  <section class="hero hero--cosmic">
-    <CosmicCanvas />
-    <div class="cosmic-beacon" aria-hidden="true">
-      <span class="cosmic-beacon__pulse"></span>
-      <span>INTERSTELLAR DRIVE / WARP READY</span>
-    </div>
+  <section class="hero">
     <div class="page-frame hero__grid">
       <div class="hero__content" data-reveal>
-        <p class="eyebrow">Mission 01 · Into the unknown</p>
-        <h1 class="hero__title">穿越未知的边界，<span class="gradient-text">驶向群星深处。</span></h1>
+        <p class="eyebrow">Photoacoustic Imaging · Learning · Practice</p>
+        <h1 class="hero__title">从光与声的交汇处，<span class="gradient-text">看见更深层的信息。</span></h1>
         <p class="hero__lead">
-          你好，我是睿睿。从微小信号到浩瀚深空，每一次计算、实验与构建，都是下一次跃迁的起点。用算法看见未知，也用工程拓宽人类可以抵达的边界。
+          你好，我是睿睿。这里聚焦光声成像：从光能吸收、热弹性膨胀与声波传播，到传感器采样和图像重建，逐步理解完整成像链路。
         </p>
         <div class="hero__actions">
-          <a href="/projects" class="button-primary">启动探索 <span class="button-arrow">→</span></a>
-          <a href="/resume" class="button-secondary">查看简历 <span class="button-arrow">↗</span></a>
-        </div>
-        <div class="hero-telemetry" aria-label="研究状态概览">
-          <div><strong>0.92C</strong><span>CRUISE VELOCITY</span></div>
-          <div><strong>∞</strong><span>NAVIGATION RANGE</span></div>
-          <div><strong>ON</strong><span>WARP CORE</span></div>
+          <a href="/photoacoustic" class="button-primary">了解光声成像 <span class="button-arrow">→</span></a>
+          <a href="/about" class="button-secondary">关于我 <span class="button-arrow">↗</span></a>
         </div>
       </div>
 
-      <div class="hero-visual hero-visual--cosmic" data-reveal data-reveal-delay="1" aria-label="睿睿的个人研究视觉名片">
+      <div class="hero-visual" data-reveal data-reveal-delay="1" aria-label="睿睿的个人研究视觉名片">
         <div class="hero-visual__halo"></div>
-        <div class="hero-visual__orbit hero-visual__orbit--outer"></div>
-        <div class="hero-visual__orbit hero-visual__orbit--middle"></div>
-        <div class="hero-visual__orbit hero-visual__orbit--inner"></div>
-        <div class="orbit-label orbit-label--one">IMAGING / 01</div>
-        <div class="orbit-label orbit-label--two">NEURAL / 02</div>
-        <div class="orbit-crosshair" aria-hidden="true"><span></span><span></span></div>
+        <div class="hero-visual__orbit"></div>
         <div class="hero-visual__portrait">
           <img src="/avatar.png" alt="睿睿的头像" width="700" height="814" />
           <div class="portrait-caption">
             <strong>睿睿</strong>
-            <span>Imaging · AI · Systems</span>
+            <span>Photoacoustic Imaging</span>
           </div>
         </div>
         <div class="float-chip float-chip--one">
-          <span class="float-chip__label">Gravity lock</span>
-          <span class="float-chip__value"><span class="status-dot"></span> 引力场稳定</span>
+          <span class="float-chip__label">Current focus</span>
+          <span class="float-chip__value"><span class="status-dot"></span> 光声成像</span>
         </div>
         <div class="float-chip float-chip--two">
-          <span class="float-chip__label">Destination</span>
-          <span class="float-chip__value"><span class="status-dot"></span> 群星深处</span>
-        </div>
-        <div class="hero-visual__signal" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <span class="float-chip__label">Imaging chain</span>
+          <span class="float-chip__value"><span class="status-dot"></span> Light → Sound</span>
         </div>
       </div>
-    </div>
-    <div class="cosmic-manifesto" aria-hidden="true">
-      <span>未来不是终点，而是不断被拓宽的边界</span>
-      <i></i>
-      <strong>BEYOND THE HORIZON · INTO THE UNKNOWN</strong>
     </div>
   </section>
 
@@ -106,20 +55,20 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
     <div class="page-frame">
       <div class="section-head" data-reveal>
         <div>
-          <p class="section-kicker">01 / Research lens</p>
-          <h2 class="section-heading">从成像原理到真实设备，<br />关注完整链路。</h2>
+          <p class="section-kicker">01 / Imaging chain</p>
+          <h2 class="section-heading">理解每一步，<br />才能看清完整图像。</h2>
         </div>
       </div>
       <div class="interest-panel" data-reveal data-reveal-delay="1">
         <article class="glass-card interest-intro">
-          <span class="interest-intro__index">RESEARCH / 2026</span>
-          <h3>连接科学问题<br />与工程实现</h3>
-          <p>从信号、图像和模型出发，最终落在可以验证、可以复现、也可以长期演进的系统上。</p>
+          <span class="interest-intro__index">PHOTOACOUSTIC / FOCUS</span>
+          <h3>连接物理机制<br />与成像结果</h3>
+          <p>光声成像把光学吸收对比度转化为可探测的超声信号，为组织结构与功能信息提供独特的观察窗口。</p>
         </article>
         <div class="glass-card interest-map">
-          {interests.map((item, index) => (
+          {focusAreas.map((item, index) => (
             <div class="interest-item">
-              <span>0{index + 1} / FIELD</span>
+              <span>0{index + 1} / STAGE</span>
               <strong>{item}</strong>
             </div>
           ))}
@@ -130,48 +79,13 @@ const tickerItems = ["Medical Imaging", "Photoacoustic", "Deep Learning", "Compu
 
   <section class="section-block section-block--compact">
     <div class="page-frame">
-      <div class="section-head" data-reveal>
-        <div>
-          <p class="section-kicker">02 / Selected work</p>
-          <h2 class="section-heading">正在发生的项目。</h2>
-          <p class="section-copy">不是静态陈列，而是持续推进的实验、原型与工程记录。</p>
-        </div>
-        <a href="/projects" class="text-link">查看全部项目 <span>↗</span></a>
-      </div>
-      <div class="cards-grid">
-        {featuredProjects.map((project, index) => <div data-reveal data-reveal-delay={index === 0 ? undefined : String(Math.min(index, 2))}><ProjectCard {...project} /></div>)}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="page-frame split-grid">
-      <article class="content-card" data-reveal>
-        <p class="section-kicker">03 / Toolset</p>
-        <h3>技术栈</h3>
-        <div class="stack-cloud">
-          {techStack.map((item) => <span class="stack-pill">{item}</span>)}
-        </div>
-      </article>
-      <article class="content-card" data-reveal data-reveal-delay="1">
-        <p class="section-kicker">04 / Now learning</p>
-        <h3>最近学习方向</h3>
-        <ol class="learning-list">
-          {learningTopics.map((item) => <li>{item}</li>)}
-        </ol>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block section-block--compact">
-    <div class="page-frame">
       <article class="glass-card cta-card" data-reveal>
         <div>
-          <p class="section-kicker">Build something meaningful</p>
-          <h2>对研究、项目或工程实践<br />有共同兴趣？</h2>
-          <p>欢迎交流医学影像、视觉系统与科研工程化。当前邮箱为占位信息，可随时替换为正式联系方式。</p>
+          <p class="section-kicker">Explore the modality</p>
+          <h2>从原理开始，<br />走进光声成像。</h2>
+          <p>查看光声成像页面，了解它如何把光学激发转化为声学信号，以及信号如何进一步形成图像。</p>
         </div>
-        <a href="mailto:example@example.com" class="button-primary">发一封邮件 <span class="button-arrow">↗</span></a>
+        <a href="/photoacoustic" class="button-primary">开始了解 <span class="button-arrow">↗</span></a>
       </article>
     </div>
   </section>
