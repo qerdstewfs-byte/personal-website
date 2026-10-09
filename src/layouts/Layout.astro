@@ -6,15 +6,15 @@ const path = Astro.url.pathname;
 const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', label: 'English Learning' }, { href: '/photoacoustic', label: 'Photoacoustic Imaging' } ];
 ---
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b1020" />
+    <meta name="theme-color" content="#f5f7f6" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
-    <script is:inline>try { document.documentElement.dataset.theme = localStorage.getItem('ray-journal-theme') === 'light' ? 'light' : 'dark'; } catch {}</script>
+    <script is:inline>try { document.documentElement.dataset.theme = localStorage.getItem('ray-journal-theme') === 'dark' ? 'dark' : 'light'; } catch {}</script>
   </head>
   <body>
     <a class="skip-link" href="#content">Skip to content</a>
@@ -22,7 +22,7 @@ const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', 
       <header class="journal-header">
         <a class="brand" href="/" aria-label="Ray_Lee’s Research Journal home">
           <span class="brand-mark" aria-hidden="true">R</span>
-          <span><span class="brand-name">Ray_Lee’s Research Journal</span><span class="brand-meta">RESEARCH · LEARNING · EVERY DAY</span></span>
+          <span class="brand-copy"><span class="brand-name">Ray_Lee’s Research Journal</span><span class="brand-meta">Research, learning & everyday notes</span></span>
         </a>
         <div class="toolbar">
           <div class="clock"><div class="clock-time" id="clock">--:--</div><div class="clock-date" id="clockDate">Beijing · UTC+08:00</div></div>
@@ -36,7 +36,7 @@ const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', 
         <span class="nav-status" id="accessStatus">Public view</span>
       </nav>
       <main id="content"><slot /></main>
-      <footer><span>Ray_Lee’s Research Journal · A record of things learned</span><span>Beijing time · UTC+08:00</span></footer>
+      <footer class="site-footer"><span>Ray_Lee’s Research Journal · A record of things learned</span><span>Beijing time · UTC+08:00</span></footer>
     </div>
     <dialog id="editorAccessDialog" aria-labelledby="accessTitle">
       <form id="editorAccessForm">

@@ -1,6 +1,8 @@
 import { createHmac, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { env, requireEnv } from './env';
-import { readJson, updateJson } from './storage';
+import { updateJson } from './storage';
+import { consumeLoginAttempt, LoginLimitReached, LOGIN_WINDOW_MS } from '../lib/login-attempt';
+import type { LoginAttempts } from '../lib/login-attempt';
 
 export const SESSION_COOKIE = 'ray_journal_editor';
 export const SESSION_SECONDS = 60 * 60 * 24 * 7;
@@ -29,11 +31,11 @@ export function verifyPassword(value: unknown): boolean {
 export async function allowLogin(request: Request): Promise<boolean> {
   const ip = (request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown').trim().slice(0, 100);
   const hash = sign(ip); const now = Date.now();
-  const existing = await readJson<{ until: number; count: number }>(`login/${hash}`);
-  if (existing && existing.data.until > now && existing.data.count >= 6) return false;
-  const rate = await updateJson<{ until: number; count: number }>(`login/${hash}`, () => ({ until: now + 15 * 60_000, count: 0 }), previous => {
-    if (previous.until < now) return { until: now + 15 * 60_000, count: 1 };
-    return { ...previous, count: Math.min(previous.count + 1, 7) };
-  });
-  return rate.count <= 6;
+  try {
+    await updateJson<LoginAttempts>(`login/${hash}`, () => ({ until: now + LOGIN_WINDOW_MS, count: 0 }), previous => consumeLoginAttempt(previous, now));
+    return true;
+  } catch (error) {
+    if (error instanceof LoginLimitReached) return false;
+    throw error;
+  }
 }

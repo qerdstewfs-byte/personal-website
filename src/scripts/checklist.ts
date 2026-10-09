@@ -1,6 +1,8 @@
 import { beijingDate, shiftDate, DEFAULT_TASKS } from '../lib/journal';
 import type { Task, DayRecord, JournalPayload } from '../lib/journal';
 import { CheckmarkBuffer } from '../lib/checkmarks';
+import { formatJournalDate as format, beijingHour, formatSavedTime } from '../lib/journal-dates';
+import { journalPermissions } from '../lib/permissions';
 
 const CATEGORIES = ['Research', 'English', 'Development'] as const;
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -52,16 +54,13 @@ function initJournal() {
   const calendarButtons = new Map<string, HTMLButtonElement>();
   const calendarStates = new Map<string, string>();
   let taskSignature = '';
+  let weekEndDate = '';
 
   function validDate(value: string | null): value is string {
     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const year = Number(value.slice(0,4));
     const parsed = new Date(`${value}T12:00:00Z`);
     return year >= MIN_YEAR && year <= MAX_YEAR && !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0,10) === value;
-  }
-
-  function format(date: string, options: Intl.DateTimeFormatOptions = {}) {
-    return new Intl.DateTimeFormat('en-US', { timeZone:'Asia/Shanghai', ...options }).format(new Date(`${date}T12:00:00+08:00`));
   }
 
   function record(date = selectedDate) { return checkmarks.overlay(date, records[date], template); }
@@ -164,34 +163,40 @@ function initJournal() {
 
   function drawWeek() {
     const container = $('weekBars');
-    container.replaceChildren();
-    for (let offset = -6; offset <= 0; offset++) {
-      const date = shiftDate(selectedDate,offset);
+    if (weekEndDate !== selectedDate) {
+      weekEndDate = selectedDate;
+      const fragment = document.createDocumentFragment();
+      for (let offset = -6; offset <= 0; offset++) {
+        const date = shiftDate(selectedDate,offset);
+        const button = make('button','week-item') as HTMLButtonElement;
+        button.type = 'button'; button.dataset.date = date;
+        const track = make('span','bar-track'); track.append(make('span','bar-fill'));
+        button.append(make('span','bar-value'),track,make('span','bar-label',format(date,{weekday:'short'}).slice(0,2)));
+        fragment.append(button);
+      }
+      container.replaceChildren(fragment);
+    }
+    for (const button of container.querySelectorAll<HTMLButtonElement>('[data-date]')) {
+      const date = button.dataset.date!;
       const saved = record(date);
       const s = stats(saved);
-      const button = make('button','week-item') as HTMLButtonElement;
-      button.type = 'button';
-      button.dataset.date = date;
       const description = !hasLoaded(date) ? 'Records not loaded' : saved ? `${s.done} of ${s.total} tasks complete (${s.percent}%)` : 'No saved record';
       button.setAttribute('aria-label',`${format(date,{month:'long',day:'numeric',year:'numeric'})}: ${description}`);
       button.title = button.getAttribute('aria-label')!;
-      if (date === today) button.setAttribute('aria-current','date');
-      const track = make('span','bar-track');
-      const fill = make('span','bar-fill');
-      fill.style.height = `${s.percent}%`;
-      track.append(fill);
-      button.append(make('span','bar-value',saved ? `${s.percent}%` : '—'),track,make('span','bar-label',format(date,{weekday:'short'}).slice(0,2)));
-      container.append(button);
+      if (date === today) button.setAttribute('aria-current','date'); else button.removeAttribute('aria-current');
+      button.querySelector<HTMLElement>('.bar-fill')!.style.height = `${s.percent}%`;
+      button.querySelector('.bar-value')!.textContent = saved ? `${s.percent}%` : '—';
     }
   }
 
-  function drawCalendar() {
+  function drawCalendar(changedDates?: ReadonlySet<string>) {
     $('calendarYear').textContent = String(displayedYear);
     $<HTMLButtonElement>('previousYear').disabled = loading || displayedYear <= MIN_YEAR;
     $<HTMLButtonElement>('nextYear').disabled = loading || displayedYear >= MAX_YEAR;
     const container = $('yearMonths');
     container.setAttribute('aria-busy',String(loading));
     if (calendarBuiltYear !== displayedYear) {
+    changedDates = undefined;
     calendarBuiltYear = displayedYear;
     calendarButtons.clear(); calendarStates.clear(); container.replaceChildren();
     for (let month = 0; month < 12; month++) {
@@ -218,7 +223,9 @@ function initJournal() {
       container.append(section);
     }
     }
-    for (const [date,button] of calendarButtons) {
+    for (const date of changedDates ?? calendarButtons.keys()) {
+      const button = calendarButtons.get(date);
+      if (!button) continue;
       const saved = record(date); const s = stats(saved);
       const stateKey = JSON.stringify([Boolean(saved),s.done,s.total,Boolean(saved?.note),date === today,date > today,date === selectedDate,loading,loadedYears.has(displayedYear)]);
       if (calendarStates.get(date) === stateKey) continue;
@@ -245,7 +252,7 @@ function initJournal() {
 
   function drawStatus() {
     const isFuture = selectedDate > today;
-    const hour = Number(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',hour:'2-digit',hour12:false}).format(new Date()));
+    const hour = beijingHour();
     $('greeting').textContent = selectedDate === today ? hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening' : isFuture ? 'One step at a time' : 'Your progress, remembered';
     $('dayLabel').textContent = `${selectedDate === today ? 'TODAY' : isFuture ? 'LOOKING AHEAD' : 'FROM THE ARCHIVE'} · ${format(selectedDate,{year:'numeric',month:'long',day:'numeric'}).toUpperCase()}`;
     $('selectedDayText').textContent = format(selectedDate,{weekday:'long',month:'long',day:'numeric'});
@@ -266,14 +273,14 @@ function initJournal() {
     $<HTMLInputElement>('applyToFuture').disabled ||= selectedDate !== today;
     for (const id of ['cancelConflict','useCloudNote','keepDraftNote','cancelReset']) $<HTMLButtonElement>(id).disabled = pending > 0;
     $('retryChecks').hidden = !checkFailed || !checkmarks.pending || !canEdit();
-    $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Checkmarks not saved. Your choices are kept here; retry saving.' : busy ? 'Saving changes to the cloud… You can keep checking tasks.' : lastError ? lastError : !hasLoaded() ? 'Connecting to the journal…' : record() ? `Saved in the cloud · ${record()!.updatedAt ? new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(record()!.updatedAt)) + ' Beijing' : selectedDate}` : 'No saved record for this date yet.';
+    $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Checkmarks not saved. Your choices are kept here; retry saving.' : busy ? 'Saving changes to the cloud… You can keep checking tasks.' : lastError ? lastError : !hasLoaded() ? 'Connecting to the journal…' : record() ? `Saved in the cloud · ${record()!.updatedAt ? formatSavedTime(record()!.updatedAt) + ' Beijing' : selectedDate}` : 'No saved record for this date yet.';
     $('retryNote').hidden = !noteFailed || !canEdit();
     $<HTMLButtonElement>('retryNote').textContent = noteConflict ? 'Review versions' : 'Retry saving';
     $('saveHint').textContent = noteConflict ? 'Another device changed this note. Your draft is safe here; review both versions.' : noteFailed ? 'Note not saved. Your text is still here; retry when connected.' : noteDirty ? 'Unsaved changes · Saving shortly…' : pending > 0 ? 'Saving…' : !canEdit() ? record()?.note ? 'Saved daily note · Public reading' : 'No note saved for this date.' : record() ? 'Saved in the cloud · Notes are different every day' : 'Autosaves when you write · Notes are different every day';
   }
 
-  function render(replaceNote = false) {
-    drawTasks(); drawStats(); drawWeek(); drawCalendar(); drawStatus();
+  function render(replaceNote = false, changedDates?: ReadonlySet<string>) {
+    drawTasks(); drawStats(); drawWeek(); drawCalendar(changedDates); drawStatus();
     if (replaceNote && !noteDirty) noteField.value = record()?.note ?? '';
   }
 
@@ -296,6 +303,7 @@ function initJournal() {
     if (pending || checkmarks.pending || noteDirty || editor.open || resetDialog.open || conflictDialog.open) return;
     const version = ++loadVersion;
     const expectedDataVersion = dataVersion;
+    const permissionRevision = journalPermissions.revision;
     loading = !quiet;
     if (!quiet) drawStatus();
     try {
@@ -303,7 +311,8 @@ function initJournal() {
       if (version !== loadVersion || expectedDataVersion !== dataVersion || pending || checkmarks.pending || noteDirty) return;
       mergeYear(year,data);
       template = data.template;
-      editing = data.editing;
+      journalPermissions.applyRead(data.editing,permissionRevision,'journal');
+      editing = journalPermissions.editing;
       cloud = data.cloud;
       today = data.today;
       connected = true;
@@ -332,10 +341,11 @@ function initJournal() {
     dataVersion++;
     drawTasks(); drawStatus();
     const operation = queue.then(async () => {
+      const permissionRevision = journalPermissions.revision;
       const response = await fetch('/api/journal',{method:'POST',credentials:'same-origin',keepalive:action === 'note',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,action,...extra})});
       const payload = await response.json() as {record?:DayRecord;template?:Task[];error?:string};
       if (!response.ok || !payload.record) {
-        if (response.status === 401 || response.status === 403) editing = false;
+        if (response.status === 401 || response.status === 403) journalPermissions.deny(permissionRevision);
         if (action === 'note' && response.status === 409) noteConflict = true;
         throw new Error(payload.error || 'Changes could not be saved. Please retry.');
       }
@@ -360,7 +370,7 @@ function initJournal() {
       lastError = error instanceof Error ? error.message : 'Changes could not be saved. Please retry.';
       if (action === 'note' && date === selectedDate) noteFailed = true;
       throw error;
-    }).finally(() => { pending--; render(false); });
+    }).finally(() => { pending--; render(false,new Set([date])); });
     queue = operation.catch(() => undefined);
     return operation;
   }
@@ -368,6 +378,7 @@ function initJournal() {
   function flushChecks(): Promise<boolean> {
     if (checkFlush) return checkFlush;
     clearTimeout(checkTimer);
+    checkFailed = false;
     checkFlush = (async () => {
       while (checkmarks.pending) {
         const date = checkmarks.dates()[0]; const sent = checkmarks.snapshot(date);
@@ -430,7 +441,7 @@ function initJournal() {
     if (!canEdit() || editor.open || resetDialog.open || !tasks().some(task => task.id === id)) return;
     checkmarks.stage(selectedDate,id,record()?.checked[id] !== true);
     dataVersion++; checkFailed = false;
-    render(false);
+    render(false,new Set([selectedDate]));
     clearTimeout(checkTimer); checkTimer = setTimeout(() => { void flushChecks(); },150);
   }
 
@@ -522,14 +533,15 @@ function initJournal() {
     if (keyEvent.ctrlKey || keyEvent.metaKey || keyEvent.altKey || editor.open || resetDialog.open || document.querySelector('dialog[open]') || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName ?? '') || !canEdit()) return;
     if (/^[1-9]$/.test(keyEvent.key)) { const task = orderedTasks()[Number(keyEvent.key) - 1]; if (task) { keyEvent.preventDefault(); void toggleTask(task.id); } }
   });
-  listen(window,'journal:permissions',event => {
-    const detail = (event as CustomEvent<{editing:boolean}>).detail;
-    const changed = editing !== (detail?.editing === true);
-    editing = detail?.editing === true;
+  const unsubscribePermissions = journalPermissions.subscribe(detail => {
+    const changed = editing !== detail.editing;
+    editing = detail.editing;
+    // Journal reads update the header too, but never trigger another journal read.
+    if (detail.source === 'journal') return;
     if (changed) dataVersion++;
     if (!editing) { if (editor.open) editor.close(); if (resetDialog.open) resetDialog.close(); if (conflictDialog.open) conflictDialog.close(); }
     drawTasks(); drawStatus();
-    if ((changed || !loading) && !pending && !checkmarks.pending && !noteDirty) void load(displayedYear,connected);
+    if (detail.source === 'action' && !pending && !checkmarks.pending && !noteDirty) void load(displayedYear,connected);
   });
   listen(window,'beforeunload',event => { if (noteDirty || pending || checkmarks.pending) { event.preventDefault(); (event as BeforeUnloadEvent).returnValue = ''; } });
   listen(document,'visibilitychange',() => { if (document.hidden) { if ((noteDirty || checkmarks.pending) && canEdit()) void flushNotes(); } else if (!pending && !noteDirty && !editor.open && !resetDialog.open && !conflictDialog.open) { if (checkmarks.pending) void flushChecks(); else void load(displayedYear,true); } });
@@ -570,9 +582,10 @@ function initJournal() {
     else if (wasToday) { render(false); announce('A new day has started in Beijing. Finish your note, then return to today.'); }
     else render(false);
   },30000);
-  document.addEventListener('astro:before-swap',() => { listeners.abort(); clearInterval(midnightTimer); clearTimeout(noteTimer); clearTimeout(checkTimer); clearTimeout(toastTimer); },{once:true});
-  render(true);
+  document.addEventListener('astro:before-swap',() => { listeners.abort(); unsubscribePermissions(); clearInterval(midnightTimer); clearTimeout(noteTimer); clearTimeout(checkTimer); clearTimeout(toastTimer); },{once:true});
+  // Start the request before constructing the year's calendar on the main thread.
   void load();
+  render(true);
 }
 
 initJournal();
