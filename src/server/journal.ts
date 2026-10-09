@@ -20,19 +20,23 @@ export function validateTasks(value: unknown): Task[] {
 export async function writeRecord(input: Record<string, unknown>) {
   const { date, action } = input;
   if (!validDate(date) || date > beijingDate()) throw new Error('Select a valid date on or before today in Beijing.');
-  if (!['check', 'note', 'reset', 'tasks'].includes(String(action))) throw new Error('Unknown action.');
+  if (!['check', 'checks', 'note', 'reset', 'tasks'].includes(String(action))) throw new Error('Unknown action.');
   const tasks = action === 'tasks' ? validateTasks(input.tasks) : null;
   if (action === 'note' && (typeof input.note !== 'string' || input.note.length > 10_000)) throw new Error('Notes can contain up to 10,000 characters.');
   if (action === 'check' && (typeof input.taskId !== 'string' || typeof input.checked !== 'boolean')) throw new Error('Invalid checkmark.');
+  const checks = action === 'checks' ? input.checks : action === 'check' ? [{taskId: input.taskId, checked: input.checked}] : [];
+  if (!Array.isArray(checks) || checks.length > 40 || (action === 'checks' && !checks.length) || checks.some(item => !item || typeof item.taskId !== 'string' || typeof item.checked !== 'boolean') || new Set(checks.map(item => item.taskId)).size !== checks.length) throw new Error('Invalid checkmarks.');
   if (['note', 'tasks'].includes(String(action)) && (!Number.isInteger(input.baseRevision) || Number(input.baseRevision) < 0)) throw new Error('Invalid record revision. Reload the record before editing.');
   if (input.applyToFuture && (action !== 'tasks' || date !== beijingDate())) throw new Error('Only today’s checklist can become the future default.');
   // A single conditional commit keeps the selected record and its future-default change atomic.
   const state = await updateJson<JournalData>('state', initialState, previous => {
     const record = previous.records[date] || { date, tasks: structuredClone(previous.template), checked: {}, note: '', revision: 0, updatedAt: '' };
     if (['note', 'tasks'].includes(String(action)) && record.revision !== input.baseRevision) throw new Error('Record changed on another device. Reload before replacing this note or checklist.');
-    if (action === 'check') {
-      const taskId = input.taskId as string; if (!record.tasks.some(task => task.id === taskId)) throw new Error('This task is no longer on the selected checklist. Reload it first.');
-      record.checked[taskId] = input.checked as boolean;
+    if (action === 'check' || action === 'checks') {
+      for (const item of checks) {
+        if (!record.tasks.some(task => task.id === item.taskId)) throw new Error('This task is no longer on the selected checklist. Reload it first.');
+        record.checked[item.taskId] = item.checked;
+      }
     } else if (action === 'note') record.note = input.note as string;
     else if (action === 'reset') record.checked = {};
     else if (tasks) {

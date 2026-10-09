@@ -1,5 +1,6 @@
 import { beijingDate, shiftDate, DEFAULT_TASKS } from '../lib/journal';
 import type { Task, DayRecord, JournalPayload } from '../lib/journal';
+import { CheckmarkBuffer } from '../lib/checkmarks';
 
 const CATEGORIES = ['Research', 'English', 'Development'] as const;
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -43,6 +44,14 @@ function initJournal() {
   let dataVersion = 0;
   let lastError = '';
   let navigating = false;
+  const checkmarks = new CheckmarkBuffer();
+  let checkTimer: ReturnType<typeof setTimeout> | undefined;
+  let checkFlush: Promise<boolean> | null = null;
+  let checkFailed = false;
+  let calendarBuiltYear = 0;
+  const calendarButtons = new Map<string, HTMLButtonElement>();
+  const calendarStates = new Map<string, string>();
+  let taskSignature = '';
 
   function validDate(value: string | null): value is string {
     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -55,7 +64,7 @@ function initJournal() {
     return new Intl.DateTimeFormat('en-US', { timeZone:'Asia/Shanghai', ...options }).format(new Date(`${date}T12:00:00+08:00`));
   }
 
-  function record(date = selectedDate) { return records[date]; }
+  function record(date = selectedDate) { return checkmarks.overlay(date, records[date], template); }
   function tasks(date = selectedDate) { return record(date)?.tasks ?? template; }
   function orderedTasks() {
     const list = tasks();
@@ -66,7 +75,7 @@ function initJournal() {
     const done = day?.tasks.filter(task => day.checked[task.id] === true).length ?? 0;
     return { done, total, percent: total ? Math.round(done / total * 100) : 0 };
   }
-  function canEdit() { return editing && cloud && connected && selectedDate <= today && !loading; }
+  function canEdit() { return editing && cloud && connected && hasLoaded() && selectedDate <= today && !loading; }
   function hasLoaded(date = selectedDate) { return loadedYears.has(Number(date.slice(0,4))); }
   function announce(message: string) {
     $('journalToast').textContent = message;
@@ -83,15 +92,35 @@ function initJournal() {
 
   function drawTasks() {
     const container = $('taskList');
-    container.replaceChildren();
-    container.setAttribute('aria-busy', String(loading || pending > 0));
     const activeTasks = tasks();
+    const signature = JSON.stringify([selectedDate,activeTasks]);
+    container.setAttribute('aria-busy', String(loading));
+    // Preserve button nodes and keyboard focus while cloud requests run.
+    if (taskSignature === signature) {
+      for (const button of container.querySelectorAll<HTMLButtonElement>('button[data-task-id]')) {
+        const task = activeTasks.find(task => task.id === button.dataset.taskId)!;
+        const checked = record()?.checked[task.id] === true;
+        button.classList.toggle('checked',checked);
+        button.disabled = !canEdit();
+        button.setAttribute('aria-pressed',String(checked));
+        button.setAttribute('aria-label',`${checked ? 'Completed' : 'Incomplete'}: ${task.title}`);
+        button.querySelector('.checkbox')!.textContent = checked ? '✓' : '';
+      }
+      for (const group of container.querySelectorAll<HTMLElement>('[data-category]')) {
+        const list = activeTasks.filter(task => task.category === group.dataset.category);
+        group.querySelector('.group-count')!.textContent = `${list.filter(task => record()?.checked[task.id]).length} / ${list.length}`;
+      }
+      return;
+    }
+    taskSignature = signature;
+    container.replaceChildren();
     let index = 0;
     const categories = [...CATEGORIES, ...new Set(activeTasks.map(task => task.category).filter(category => !CATEGORIES.includes(category as typeof CATEGORIES[number])))];
     for (const category of categories) {
       const groupTasks = activeTasks.filter(task => task.category === category);
       if (!groupTasks.length) continue;
       const group = make('div','group');
+      group.dataset.category = category;
       const head = make('div','group-head');
       const name = make('span','group-name');
       const dot = make('i',`group-dot ${category.toLowerCase()}`);
@@ -105,7 +134,7 @@ function initJournal() {
         const button = make('button',`task${checked ? ' checked' : ''}`) as HTMLButtonElement;
         button.type = 'button';
         button.dataset.taskId = task.id;
-        button.disabled = !canEdit() || pending > 0;
+        button.disabled = !canEdit();
         button.setAttribute('aria-pressed',String(checked));
         button.setAttribute('aria-label',`${checked ? 'Completed' : 'Incomplete'}: ${task.title}`);
         const check = make('span','checkbox',checked ? '✓' : '');
@@ -162,7 +191,9 @@ function initJournal() {
     $<HTMLButtonElement>('nextYear').disabled = loading || displayedYear >= MAX_YEAR;
     const container = $('yearMonths');
     container.setAttribute('aria-busy',String(loading));
-    container.replaceChildren();
+    if (calendarBuiltYear !== displayedYear) {
+    calendarBuiltYear = displayedYear;
+    calendarButtons.clear(); calendarStates.clear(); container.replaceChildren();
     for (let month = 0; month < 12; month++) {
       const section = make('section','calendar-month');
       const heading = make('h3',undefined,MONTH_NAMES[month]);
@@ -177,24 +208,30 @@ function initJournal() {
       const count = new Date(Date.UTC(displayedYear,month + 1,0)).getUTCDate();
       for (let day = 1; day <= count; day++) {
         const date = `${displayedYear}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const saved = record(date);
-        const s = stats(saved);
-        const classes = ['calendar-day', ...(saved ? ['recorded'] : []), ...(s.percent > 0 && s.percent < 100 ? ['partial'] : []), ...(s.total > 0 && s.percent === 100 ? ['complete'] : []), ...(date === today ? ['today'] : []), ...(date > today ? ['future'] : []), ...(saved?.note ? ['has-note'] : [])];
-        const button = make('button',classes.join(' '),String(day)) as HTMLButtonElement;
+        const button = make('button','calendar-day',String(day)) as HTMLButtonElement;
         button.type = 'button';
         button.dataset.date = date;
-        button.disabled = loading;
-        button.setAttribute('aria-pressed',String(date === selectedDate));
-        if (date === today) button.setAttribute('aria-current','date');
-        const state = date > today ? 'Future date, read only' : !loadedYears.has(displayedYear) ? 'Records not loaded' : saved ? `${s.done} of ${s.total} tasks complete (${s.percent}%)${saved.note ? ', with a daily note' : ''}` : 'No saved record';
-        button.setAttribute('aria-label',`${format(date,{month:'long',day:'numeric',year:'numeric'})}: ${state}`);
-        button.title = button.getAttribute('aria-label')!;
+        calendarButtons.set(date,button);
         days.append(button);
       }
       section.append(heading,weekdays,days);
       container.append(section);
     }
-    const savedDays = Object.entries(records).filter(([date]) => Number(date.slice(0,4)) === displayedYear).map(([,day]) => day);
+    }
+    for (const [date,button] of calendarButtons) {
+      const saved = record(date); const s = stats(saved);
+      const stateKey = JSON.stringify([Boolean(saved),s.done,s.total,Boolean(saved?.note),date === today,date > today,date === selectedDate,loading,loadedYears.has(displayedYear)]);
+      if (calendarStates.get(date) === stateKey) continue;
+      calendarStates.set(date,stateKey);
+      button.className = ['calendar-day', ...(saved ? ['recorded'] : []), ...(s.percent > 0 && s.percent < 100 ? ['partial'] : []), ...(s.total > 0 && s.percent === 100 ? ['complete'] : []), ...(date === today ? ['today'] : []), ...(date > today ? ['future'] : []), ...(saved?.note ? ['has-note'] : [])].join(' ');
+      button.disabled = loading;
+      button.setAttribute('aria-pressed',String(date === selectedDate));
+      if (date === today) button.setAttribute('aria-current','date'); else button.removeAttribute('aria-current');
+      const state = date > today ? 'Future date, read only' : !loadedYears.has(displayedYear) ? 'Records not loaded' : saved ? `${s.done} of ${s.total} tasks complete (${s.percent}%)${saved.note ? ', with a daily note' : ''}` : 'No saved record';
+      button.setAttribute('aria-label',`${format(date,{month:'long',day:'numeric',year:'numeric'})}: ${state}`);
+      button.title = button.getAttribute('aria-label')!;
+    }
+    const savedDays = [...new Set([...Object.keys(records),...checkmarks.dates()])].filter(date => Number(date.slice(0,4)) === displayedYear).map(date => record(date)!);
     const completeDays = savedDays.filter(day => { const s = stats(day); return s.total > 0 && s.done === s.total; }).length;
     const doneTasks = savedDays.reduce((count,day) => count + stats(day).done,0);
     const notes = savedDays.filter(day => day.note.trim()).length;
@@ -219,15 +256,17 @@ function initJournal() {
     $('returnToday').hidden = selectedDate === today;
     $('retryLoad').hidden = !lastError;
     $('accessHint').textContent = loading ? 'Loading cloud records…' : !connected ? 'Cloud records could not be loaded. Please retry the connection.' : !cloud ? 'Cloud storage is not connected. Records cannot be saved yet.' : isFuture ? 'Future dates can be viewed. Editing opens when the date arrives in Beijing.' : editing ? 'Owner editing is active. Changes are saved to the cloud and synced across devices.' : 'Public reading · Only the owner can edit. Use Owner access in the header to make changes.';
-    $<HTMLButtonElement>('editTasks').disabled = !canEdit() || pending > 0;
-    $<HTMLButtonElement>('resetDay').disabled = !canEdit() || pending > 0 || !stats(record()).done;
+    const busy = pending > 0 || checkmarks.pending;
+    $<HTMLButtonElement>('editTasks').disabled = !canEdit() || busy;
+    $<HTMLButtonElement>('resetDay').disabled = !canEdit() || busy || !stats(record()).done;
     noteField.disabled = !canEdit();
     $<HTMLButtonElement>('saveTasks').disabled = !canEdit() || pending > 0;
     $<HTMLButtonElement>('confirmReset').disabled = !canEdit() || pending > 0;
     editor.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input,select,button').forEach(field => { field.disabled = !canEdit() || pending > 0; });
     $<HTMLInputElement>('applyToFuture').disabled ||= selectedDate !== today;
     for (const id of ['cancelConflict','useCloudNote','keepDraftNote','cancelReset']) $<HTMLButtonElement>(id).disabled = pending > 0;
-    $('footerStatus').textContent = pending > 0 ? 'Saving changes to the cloud…' : lastError ? lastError : !hasLoaded() ? 'Connecting to the journal…' : record() ? `Saved in the cloud · ${record()!.updatedAt ? new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(record()!.updatedAt)) + ' Beijing' : selectedDate}` : 'No saved record for this date yet.';
+    $('retryChecks').hidden = !checkFailed || !checkmarks.pending || !canEdit();
+    $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Checkmarks not saved. Your choices are kept here; retry saving.' : busy ? 'Saving changes to the cloud… You can keep checking tasks.' : lastError ? lastError : !hasLoaded() ? 'Connecting to the journal…' : record() ? `Saved in the cloud · ${record()!.updatedAt ? new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(record()!.updatedAt)) + ' Beijing' : selectedDate}` : 'No saved record for this date yet.';
     $('retryNote').hidden = !noteFailed || !canEdit();
     $<HTMLButtonElement>('retryNote').textContent = noteConflict ? 'Review versions' : 'Retry saving';
     $('saveHint').textContent = noteConflict ? 'Another device changed this note. Your draft is safe here; review both versions.' : noteFailed ? 'Note not saved. Your text is still here; retry when connected.' : noteDirty ? 'Unsaved changes · Saving shortly…' : pending > 0 ? 'Saving…' : !canEdit() ? record()?.note ? 'Saved daily note · Public reading' : 'No note saved for this date.' : record() ? 'Saved in the cloud · Notes are different every day' : 'Autosaves when you write · Notes are different every day';
@@ -254,14 +293,14 @@ function initJournal() {
   }
 
   async function load(year = displayedYear, quiet = false) {
-    if (pending || noteDirty || editor.open || resetDialog.open || conflictDialog.open) return;
+    if (pending || checkmarks.pending || noteDirty || editor.open || resetDialog.open || conflictDialog.open) return;
     const version = ++loadVersion;
     const expectedDataVersion = dataVersion;
     loading = !quiet;
     if (!quiet) drawStatus();
     try {
       const data = await fetchYear(year);
-      if (version !== loadVersion || expectedDataVersion !== dataVersion || pending || noteDirty) return;
+      if (version !== loadVersion || expectedDataVersion !== dataVersion || pending || checkmarks.pending || noteDirty) return;
       mergeYear(year,data);
       template = data.template;
       editing = data.editing;
@@ -274,7 +313,7 @@ function initJournal() {
       const adjacentYear = Number(weekStart.slice(0,4));
       if (adjacentYear !== Number(selectedDate.slice(0,4)) && !loadedYears.has(adjacentYear) && adjacentYear >= MIN_YEAR) {
         const adjacent = await fetchYear(adjacentYear);
-        if (version !== loadVersion || expectedDataVersion !== dataVersion || pending || noteDirty) return;
+        if (version !== loadVersion || expectedDataVersion !== dataVersion || pending || checkmarks.pending || noteDirty) return;
         mergeYear(adjacentYear,adjacent);
       }
     } catch (error) {
@@ -286,9 +325,9 @@ function initJournal() {
     }
   }
 
-  type Action = 'check'|'note'|'reset'|'tasks';
-  function write(action: Action, extra: Record<string,unknown>, date = selectedDate): Promise<void> {
-    if (!canEdit() || date > today) return Promise.reject(new Error('Owner access is required to edit this day.'));
+  type Action = 'check'|'checks'|'note'|'reset'|'tasks';
+  function write(action: Action, extra: Record<string,unknown>, date = selectedDate, acknowledged?: () => void): Promise<void> {
+    if (!editing || !cloud || !connected || date > today) return Promise.reject(new Error('Owner access is required to edit this day.'));
     pending++;
     dataVersion++;
     drawTasks(); drawStatus();
@@ -303,6 +342,7 @@ function initJournal() {
       const previous = records[date];
       if (action !== 'note' && date === selectedDate && noteDirty && noteBaseRevision === (previous?.revision ?? 0) && payload.record.note === (previous?.note ?? '')) noteBaseRevision = payload.record.revision;
       records[date] = payload.record;
+      acknowledged?.();
       if (payload.template) template = payload.template;
       if (action === 'note' && date === selectedDate) {
         noteBaseRevision = payload.record.revision;
@@ -325,10 +365,30 @@ function initJournal() {
     return operation;
   }
 
+  function flushChecks(): Promise<boolean> {
+    if (checkFlush) return checkFlush;
+    clearTimeout(checkTimer);
+    checkFlush = (async () => {
+      while (checkmarks.pending) {
+        const date = checkmarks.dates()[0]; const sent = checkmarks.snapshot(date);
+        try {
+          await write('checks',{checks:sent.map(({taskId,checked}) => ({taskId,checked}))},date,() => checkmarks.acknowledge(date,sent));
+          checkFailed = false;
+        } catch {
+          checkFailed = true; drawStatus(); announce('Checkmarks could not be saved. Your choices are kept here; retry saving.');
+          return false;
+        }
+      }
+      drawStatus(); return true;
+    })().finally(() => { checkFlush = null; });
+    return checkFlush;
+  }
+
   function flushNotes(): Promise<boolean> {
     if (noteFlush) return noteFlush;
     clearTimeout(noteTimer);
     noteFlush = (async () => {
+      if (checkmarks.pending && !(await flushChecks())) return false;
       await queue;
       if (!noteDirty) return true;
       if (noteConflict) { drawStatus(); return false; }
@@ -344,14 +404,17 @@ function initJournal() {
     if (!validDate(date) || date === selectedDate || navigating || loading) return;
     navigating = true;
     try {
-      if (!(await flushNotes()) && !confirm('Your note has not been saved. Stay here to retry, or discard the unsaved text and change dates?')) return;
+      if (noteDirty && !(await flushNotes()) && !confirm('Your note has not been saved. Stay here to retry, or discard the unsaved text and change dates?')) return;
       noteDirty = false; noteFailed = false; noteConflict = false;
       selectedDate = date;
       dataVersion++;
       displayedYear = Number(date.slice(0,4));
       history.replaceState(null,'',`${location.pathname}#date=${date}`);
-      if (!loadedYears.has(displayedYear) || Number(shiftDate(date,-6).slice(0,4)) !== displayedYear && !loadedYears.has(displayedYear - 1)) await load(displayedYear);
-      else render(true);
+      render(true);
+      if (!loadedYears.has(displayedYear) || Number(shiftDate(date,-6).slice(0,4)) !== displayedYear && !loadedYears.has(displayedYear - 1)) {
+        if (checkmarks.pending && !(await flushChecks())) return;
+        await load(displayedYear);
+      }
       if (scroll) $('boardTitle').scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
     } finally { navigating = false; }
   }
@@ -363,12 +426,12 @@ function initJournal() {
     await load(year);
   }
 
-  async function toggleTask(id: string) {
-    if (!canEdit() || pending || !tasks().some(task => task.id === id)) return;
-    if (!(await flushNotes())) { announce('Save your note before changing a task.'); return; }
-    if (pending) return;
-    try { await write('check',{taskId:id,checked:record()?.checked[id] !== true}); if (stats(record()).percent === 100) announce('All tasks complete. Great work!'); }
-    catch { announce(lastError); }
+  function toggleTask(id: string) {
+    if (!canEdit() || editor.open || resetDialog.open || !tasks().some(task => task.id === id)) return;
+    checkmarks.stage(selectedDate,id,record()?.checked[id] !== true);
+    dataVersion++; checkFailed = false;
+    render(false);
+    clearTimeout(checkTimer); checkTimer = setTimeout(() => { void flushChecks(); },150);
   }
 
   function addEditorRow(task: Task) {
@@ -391,7 +454,6 @@ function initJournal() {
   async function openEditor() {
     if (!canEdit() || pending) return;
     if (!(await flushNotes())) { announce('Save your note before editing tasks.'); return; }
-    await load(Number(selectedDate.slice(0,4)),true);
     if (!canEdit()) return;
     $('editRows').replaceChildren(); tasks().forEach(addEditorRow);
     editorBaseRevision = record()?.revision ?? 0;
@@ -411,6 +473,7 @@ function initJournal() {
   listen($('nextYear'),'click',() => { void changeYear(displayedYear + 1); });
   listen($('retryLoad'),'click',() => { void load(); });
   listen($('retryNote'),'click',() => { if (noteConflict) void reviewConflict(); else void flushNotes(); });
+  listen($('retryChecks'),'click',() => { void flushChecks(); });
   listen(noteField,'input',() => {
     dataVersion++;
     if (!noteDirty) noteBaseRevision = record()?.revision ?? 0;
@@ -456,17 +519,20 @@ function initJournal() {
   });
   listen(document,'keydown',event => {
     const keyEvent = event as KeyboardEvent;
-    if (keyEvent.ctrlKey || keyEvent.metaKey || keyEvent.altKey || editor.open || resetDialog.open || document.querySelector('dialog[open]') || ['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName ?? '') || !canEdit() || pending) return;
+    if (keyEvent.ctrlKey || keyEvent.metaKey || keyEvent.altKey || editor.open || resetDialog.open || document.querySelector('dialog[open]') || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName ?? '') || !canEdit()) return;
     if (/^[1-9]$/.test(keyEvent.key)) { const task = orderedTasks()[Number(keyEvent.key) - 1]; if (task) { keyEvent.preventDefault(); void toggleTask(task.id); } }
   });
   listen(window,'journal:permissions',event => {
     const detail = (event as CustomEvent<{editing:boolean}>).detail;
+    const changed = editing !== (detail?.editing === true);
     editing = detail?.editing === true;
+    if (changed) dataVersion++;
     if (!editing) { if (editor.open) editor.close(); if (resetDialog.open) resetDialog.close(); if (conflictDialog.open) conflictDialog.close(); }
-    if (!pending && !noteDirty) void load(); else { drawTasks(); drawStatus(); }
+    drawTasks(); drawStatus();
+    if ((changed || !loading) && !pending && !checkmarks.pending && !noteDirty) void load(displayedYear,connected);
   });
-  listen(window,'beforeunload',event => { if (noteDirty || pending) { event.preventDefault(); (event as BeforeUnloadEvent).returnValue = ''; } });
-  listen(document,'visibilitychange',() => { if (document.hidden) { if (noteDirty && canEdit()) void flushNotes(); } else if (!pending && !noteDirty && !editor.open && !resetDialog.open && !conflictDialog.open) void load(displayedYear,true); });
+  listen(window,'beforeunload',event => { if (noteDirty || pending || checkmarks.pending) { event.preventDefault(); (event as BeforeUnloadEvent).returnValue = ''; } });
+  listen(document,'visibilitychange',() => { if (document.hidden) { if ((noteDirty || checkmarks.pending) && canEdit()) void flushNotes(); } else if (!pending && !noteDirty && !editor.open && !resetDialog.open && !conflictDialog.open) { if (checkmarks.pending) void flushChecks(); else void load(displayedYear,true); } });
 
   async function reviewConflict() {
     clearTimeout(noteTimer);
@@ -500,11 +566,11 @@ function initJournal() {
     if (newToday === today) return;
     const wasToday = selectedDate === today;
     today = newToday;
-    if (wasToday && !noteDirty && !pending && !document.querySelector('dialog[open]')) { void changeDate(today).then(() => announce('A new day in Beijing. A fresh checklist is ready.')); }
+    if (wasToday && !noteDirty && !pending && !checkmarks.pending && !document.querySelector('dialog[open]')) { void changeDate(today).then(() => announce('A new day in Beijing. A fresh checklist is ready.')); }
     else if (wasToday) { render(false); announce('A new day has started in Beijing. Finish your note, then return to today.'); }
     else render(false);
   },30000);
-  document.addEventListener('astro:before-swap',() => { listeners.abort(); clearInterval(midnightTimer); clearTimeout(noteTimer); clearTimeout(toastTimer); },{once:true});
+  document.addEventListener('astro:before-swap',() => { listeners.abort(); clearInterval(midnightTimer); clearTimeout(noteTimer); clearTimeout(checkTimer); clearTimeout(toastTimer); },{once:true});
   render(true);
   void load();
 }
