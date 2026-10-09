@@ -1,0 +1,1 @@
+This directory contains only the user's real papers. Files beginning with an underscore are excluded from the content collection. See docs/content-guide.md for the schema and publication workflow. No sample papers are published.

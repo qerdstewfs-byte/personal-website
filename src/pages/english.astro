@@ -1,0 +1,37 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LibraryExplorer from "../components/LibraryExplorer.astro";
+import { publishedEnglish } from "../lib/library";
+
+export const prerender = true;
+
+const entries = await publishedEnglish();
+const speakingCount = entries.filter((entry) => entry.data.type === "speaking").length;
+const vocabularyCount = entries.filter((entry) => entry.data.type === "vocabulary").length;
+---
+
+<Layout title="English Learning | Ray_Lee’s Research Journal" description="Ray_Lee 的英语学习记录：口语语料、单词、使用场景与例句。">
+  <div class="english-page">
+    <section class="english-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">02 / ENGLISH LEARNING</p>
+        <h1>英语学习<span>Collect words.<br />Find your voice.</span></h1>
+        <p class="hero-description">收集值得保留的表达，记录真正想掌握的单词。<br />让每一次阅读与交流，都留下可以回看的语言积累。</p>
+        <div class="hero-index"><span><b>{String(speakingCount).padStart(2, "0")}</b>口语语料</span><i aria-hidden="true"></i><span><b>{String(vocabularyCount).padStart(2, "0")}</b>单词记录</span></div>
+      </div>
+      <div class="language-sheet" aria-hidden="true">
+        <span class="sheet-label">RAY_LEE / LANGUAGE NOTES</span>
+        <span class="quote-mark">“</span>
+        <p>Language is<br />a work in<br /><em>progress.</em></p>
+        <span class="sheet-bottom">A LITTLE, EVERY DAY.<span>↗</span></span>
+      </div>
+    </section>
+    <LibraryExplorer mode="english" english={entries} description="按使用场景归类，让口语表达与词汇积累更容易回顾。" />
+  </div>
+</Layout>
+
+<style>
+  .english-page{max-width:1160px;margin:0 auto;padding:44px 36px 70px}.english-hero{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:70px;align-items:center;padding:12px 0 38px;border-bottom:1px solid var(--line)}.hero-copy .eyebrow{font-size:10px;color:var(--teal);letter-spacing:.16em;margin:0 0 23px}.hero-copy h1{font-size:22px;font-weight:600;letter-spacing:-.025em;line-height:1.3;margin:0 0 23px}.hero-copy h1>span{display:block;font-size:clamp(40px,5vw,61px);line-height:1.04;font-weight:500;letter-spacing:-.065em;margin-top:20px}.hero-description{font-size:13px;line-height:2;color:var(--muted);margin:0;max-width:600px}.hero-index{display:flex;gap:24px;align-items:center;margin-top:28px}.hero-index>span{display:flex;gap:10px;align-items:baseline;font-size:11px;color:var(--dim)}.hero-index b{font:22px "JetBrains Mono",monospace;color:var(--text)}.hero-index i{height:20px;width:1px;background:var(--line)}.language-sheet{position:relative;padding:26px 28px;background:var(--surface);border:1px solid var(--line);border-radius:2px;transform:rotate(3deg);box-shadow:9px 12px 0 color-mix(in srgb,var(--surface-2) 50%,transparent);min-height:330px;overflow:hidden}.language-sheet::before{content:"";position:absolute;inset:60px 0 40px;background:repeating-linear-gradient(transparent 0,transparent 38px,var(--line) 38px,var(--line) 39px);opacity:.6}.sheet-label,.sheet-bottom{font:8px "JetBrains Mono",monospace;letter-spacing:.12em;color:var(--dim);position:relative}.quote-mark{position:relative;color:var(--teal);font:64px/1 Georgia,serif;display:block;height:54px;margin-top:20px}.language-sheet p{position:relative;font-size:33px;line-height:1.18;font-weight:400;letter-spacing:-.05em;margin:0 0 27px}.language-sheet em{font-style:normal;color:var(--teal)}.sheet-bottom{display:flex;justify-content:space-between;align-items:center}.sheet-bottom>span{font-size:18px;color:var(--teal)}
+  @media(max-width:850px){.english-hero{grid-template-columns:minmax(0,1fr) 230px;gap:35px}.language-sheet{padding:23px;min-height:285px}.language-sheet p{font-size:29px}.sheet-label{font-size:7px}.hero-copy h1>span{font-size:43px}}
+  @media(max-width:650px){.english-page{padding:32px 20px 50px}.english-hero{grid-template-columns:1fr;padding-bottom:30px;gap:30px}.language-sheet{display:none}.hero-copy h1>span{font-size:48px}.hero-description{font-size:12px}.hero-index{margin-top:24px}.hero-copy .eyebrow{margin-bottom:20px}}
+</style>

@@ -1,70 +1,50 @@
 ---
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import { ClientRouter } from "astro:transitions";
-import "../styles/global.css";
-
-interface Props {
-  title: string;
-  description?: string;
-}
-
-const {
-  title,
-  description = "睿睿的个人主页，聚焦光声成像的原理、学习与实践。",
-} = Astro.props;
+import '../styles/global.css';
+interface Props { title: string; description?: string }
+const { title, description = "Ray_Lee’s Research Journal — daily research records, English learning, and photoacoustic imaging notes." } = Astro.props;
+const path = Astro.url.pathname;
+const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', label: 'English Learning' }, { href: '/photoacoustic', label: 'Photoacoustic Imaging' } ];
 ---
-
 <!doctype html>
-<html lang="zh-CN" class="scroll-smooth">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/png" href="/avatar.png" />
+    <meta name="theme-color" content="#0b1020" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
-    <ClientRouter />
-    <meta name="theme-color" content="#f6f8fc" />
+    <script is:inline>try { document.documentElement.dataset.theme = localStorage.getItem('ray-journal-theme') === 'light' ? 'light' : 'dark'; } catch {}</script>
   </head>
   <body>
-    <div class="site-ambient" aria-hidden="true"></div>
-    <div class="site-shell" transition:animate="fade">
-      <Header />
-      <main id="content" class="site-main">
-        <slot />
-      </main>
-      <Footer />
+    <a class="skip-link" href="#content">Skip to content</a>
+    <div class="app">
+      <header class="journal-header">
+        <a class="brand" href="/" aria-label="Ray_Lee’s Research Journal home">
+          <span class="brand-mark" aria-hidden="true">R</span>
+          <span><span class="brand-name">Ray_Lee’s Research Journal</span><span class="brand-meta">RESEARCH · LEARNING · EVERY DAY</span></span>
+        </a>
+        <div class="toolbar">
+          <div class="clock"><div class="clock-time" id="clock">--:--</div><div class="clock-date" id="clockDate">Beijing · UTC+08:00</div></div>
+          <button class="icon-btn" id="themeBtn" title="Toggle light or dark theme" aria-label="Toggle theme">☼</button>
+          <button class="subtle-btn" id="fullscreenBtn" title="Enter fullscreen mode">⛶ <span class="button-label">Fullscreen</span></button>
+          <button class="subtle-btn" id="editorAccessBtn" title="Owner editing">Enable editing</button>
+        </div>
+      </header>
+      <nav class="site-nav" aria-label="Main navigation">
+        {navigation.map((item, index) => <a href={item.href} class:list={{ active: item.href === '/' ? path === '/' : path.startsWith(item.href) }} aria-current={(item.href === '/' ? path === '/' : path.startsWith(item.href)) ? 'page' : undefined}><span class="nav-index">0{index + 1}</span>{item.label}</a>)}
+        <span class="nav-status" id="accessStatus">Public view</span>
+      </nav>
+      <main id="content"><slot /></main>
+      <footer><span>Ray_Lee’s Research Journal · A record of things learned</span><span>Beijing time · UTC+08:00</span></footer>
     </div>
-    <script>
-      const initExperience = () => {
-        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-visible)");
-
-        if (reduceMotion) {
-          revealItems.forEach((item) => item.classList.add("is-visible"));
-        } else {
-          const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.classList.add("is-visible");
-                observer.unobserve(entry.target);
-              }
-            });
-          }, { threshold: 0.12, rootMargin: "0px 0px -40px" });
-          revealItems.forEach((item) => observer.observe(item));
-        }
-
-        document.querySelectorAll<HTMLElement>(".glass-card, .topic-card, .content-card").forEach((card) => {
-          card.addEventListener("pointermove", (event) => {
-            const rect = card.getBoundingClientRect();
-            card.style.setProperty("--mouse-x", `${event.clientX - rect.left}px`);
-            card.style.setProperty("--mouse-y", `${event.clientY - rect.top}px`);
-          });
-        });
-      };
-
-      document.addEventListener("astro:page-load", initExperience);
-    </script>
+    <dialog id="editorAccessDialog" aria-labelledby="accessTitle">
+      <form id="editorAccessForm">
+        <div class="dialog-head"><div><h2 id="accessTitle">Enable editing</h2><p>Public reading stays open. Your management password unlocks changes.</p></div><button type="button" class="icon-btn" id="closeAccess" aria-label="Close">×</button></div>
+        <div class="dialog-body"><label class="access-label" for="managementPassword">Management password</label><input class="editor-input" id="managementPassword" type="password" required maxlength="200" autocomplete="current-password" /><p id="accessError" class="access-error" role="alert"></p></div>
+        <div class="dialog-foot"><span class="save-hint">Editor access lasts 7 days on this device.</span><button class="filled-btn" type="submit" id="unlockBtn">Unlock editing</button></div>
+      </form>
+    </dialog>
+    <script src="../scripts/shell.ts"></script>
   </body>
 </html>

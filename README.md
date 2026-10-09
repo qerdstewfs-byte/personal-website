@@ -1,85 +1,34 @@
-# 睿睿
+# Ray_Lee’s Research Journal
 
-聚焦光声成像的个人主页，采用简洁的浅色视觉系统，保留首页、光声成像和关于我三个核心页面，适合部署为静态网站。
+Personal research records, English learning, and a source-grounded photoacoustic paper library, rebuilt within the original Astro project.
 
-## 页面
+- `/`: the supplied daily checklist, Beijing time, full-year calendar, day-specific task snapshots and notes.
+- `/english/`: speaking corpus and vocabulary search, filters, and individual entries.
+- `/photoacoustic/`: the supplied two-level directory and individual illustrated paper reports.
+- `/about`: redirects to the research library, replacing the old personal profile.
 
-- `/`：个人首页
-- `/photoacoustic`：光声成像原理与当前关注
-- `/about`：关于我
+Reading is public. Cloud mutations require the management password; the browser receives only a signed HttpOnly cookie, never storage credentials. Calendar data lives in a private Vercel Blob store and remains available on another device. The whole journal state and future task template are committed atomically with ETag checks. Notes/task-list replacement also require the revision last seen by the editor; conflicts preserve the local note and offer an explicit comparison.
 
-## 技术栈
+Real materials have not yet been supplied. Empty libraries are intentional. No invented papers, team profiles, English entries, history, or sample downloads are published.
 
-- Astro
-- Tailwind CSS
-- TypeScript
-- Vite
-- npm
+## Local development
 
-## 本地运行
+Use Node 24 or newer. Install the locked dependencies with `npm ci`. Create a local `.env.local` from `.env.example` using development credentials, then run `npm run dev`. Missing cloud configuration produces an explicit connection error and never silently falls back to device-only persistence.
 
-首次拉取项目后安装依赖：
+`npm run build` runs Astro type/content validation and creates Vercel server output. `npm test` checks Beijing midnight, leap years, and historical snapshot summaries. `tests/api-smoke.mjs` is an opt-in local integration check against the real cloud backend; it uses only the dedicated development namespace and removes its own disposable test date. Supply the local test password through `JOURNAL_TEST_PASSWORD`; it is not a production test runner.
 
-```bash
-npm install
-```
+## Adding real materials
 
-启动本地开发服务：
+See [content guide](docs/content-guide.md). Papers and English entries use schema-validated Markdown files under `src/content/`. Drafts are excluded from public routes. A published paper needs real source files, a verified team with source links, materials/methods, illustrated innovations with evidence and tradeoffs, results, and conclusions. Local PDF/note/image files live in `public/library/<paper-slug>/`; missing files fail the build.
 
-```bash
-npm run dev
-```
+The owner supplies PDFs, corresponding learning notes, and English materials for continued curation and GitHub updates. This version does not include a website upload dashboard, audio practice, or vocabulary exercises.
 
-默认本地地址通常为 `http://localhost:4321`，以终端输出为准。
+## Data and deployment
 
-## 构建方式
+See [deployment guide](docs/deploy.md). Runtime secrets belong in Vercel environment variables or ignored local environment files. `.env.*`, `.vercel/`, generated outputs, and credential files must not be committed.
 
-```bash
-npm run build
-```
+Private Blob storage keeps object access credentials on the server; the journal read API deliberately exposes the records publicly, as requested. Production, branch previews, and local development use different data prefixes so a preview test cannot overwrite production history.
 
-当前构建脚本会先执行 `astro check`，再执行 `astro build`。静态产物输出到 `dist/`。
+The journal supports calendar years 1900–2200, up to 40 tasks per day and 10,000 note characters. A 25 MB UTF-8 document limit is checked before saving; an oversized change fails without replacing the previously readable state. The current personal-scale document approach can later be migrated to a relational database if the archive grows beyond that limit.
 
-本地预览生产构建：
-
-```bash
-npm run preview
-```
-
-## 项目目录结构
-
-```text
-.
-├── public/                 # 静态资源，构建时按原路径复制
-├── src/
-│   ├── components/         # 页面组件
-│   ├── layouts/            # 页面布局
-│   ├── pages/              # Astro 路由页面
-│   └── styles/             # 全局样式
-├── docs/
-│   ├── deploy.md           # GitHub / Vercel / 域名部署说明
-│   ├── roadmap.md          # 后期扩展路线
-│   └── handoff/            # 阶段性交接文档
-├── astro.config.mjs        # Astro 配置
-├── tailwind.config.mjs     # Tailwind 配置
-├── tsconfig.json           # TypeScript 配置
-└── package.json            # 项目脚本与依赖
-```
-
-## 部署方式
-
-推荐部署到 Vercel：
-
-- GitHub 托管源代码。
-- Vercel 从 GitHub 导入项目。
-- Framework Preset 选择 Astro 或让 Vercel 自动识别。
-- Build Command 使用 `npm run build`。
-- Output Directory 使用 `dist`。
-
-详细步骤见 [docs/deploy.md](docs/deploy.md)。
-
-## 后期计划
-
-- 持续完善光声成像原理说明。
-- 补充仿真、采样与重建方法的可视化内容。
-- 添加中英文切换与访问体验优化。
+`docs/handoff/` and `docs/roadmap.md` describe the old personal website and are retained only as historical project notes; this README and the current content/deployment guides describe the rebuilt site.

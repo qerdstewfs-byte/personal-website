@@ -1,21 +1,33 @@
 {
-  "name": "my-website",
+  "name": "ray-lee-research-journal",
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    }
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro check && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "node --test tests/journal.test.mjs"
   },
   "dependencies": {
-    "@tailwindcss/vite": "latest",
-    "astro": "latest",
-    "tailwindcss": "latest"
+    "@astrojs/vercel": "11.0.13",
+    "@tailwindcss/vite": "4.3.3",
+    "@vercel/blob": "2.8.1",
+    "astro": "7.3.8",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
-    "@astrojs/check": "latest",
-    "@astrojs/ts-plugin": "latest",
-    "typescript": "latest"
+    "@astrojs/check": "0.9.10",
+    "@astrojs/ts-plugin": "1.10.12",
+    "@types/node": "26.6.4",
+    "typescript": "6.0.3"
   }
 }

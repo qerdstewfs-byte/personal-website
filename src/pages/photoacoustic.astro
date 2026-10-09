@@ -1,89 +1,34 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import Layout from "../layouts/Layout.astro";
+import LibraryExplorer from "../components/LibraryExplorer.astro";
+import { publishedPapers, researchCategories } from "../lib/library";
 
-const imagingStages = [
-  {
-    title: "光能吸收",
-    description: "脉冲光进入组织后，不同组分依据自身吸收特性沉积能量。吸收差异是光声图像产生对比度的起点。",
-  },
-  {
-    title: "热弹性膨胀",
-    description: "被吸收的光能引起瞬时温升和微小体积膨胀，进而产生向外传播的宽带超声波。",
-  },
-  {
-    title: "信号探测",
-    description: "超声换能器在不同位置记录到达时间与幅值。带宽、采样率和空间布局共同影响可恢复的信息。",
-  },
-  {
-    title: "图像重建",
-    description: "重建算法根据声波传播模型，把多通道时域信号映射回空间中的光学吸收分布。",
-  },
-];
+export const prerender = true;
 
-const characteristics = [
-  "结合光学吸收对比度与超声传播深度",
-  "可关注血红蛋白等内源性吸收体",
-  "成像质量同时受光照、声学与采样系统影响",
-  "仿真、实验标定和重建算法需要协同设计",
-];
+const papers = await publishedPapers();
 ---
 
-<BaseLayout
-  title="光声成像 | 睿睿"
-  description="了解光声成像从光能吸收、热弹性膨胀、声波探测到图像重建的完整链路。"
->
-  <section class="page-hero">
-    <div class="page-frame" data-reveal>
-      <p class="eyebrow">Photoacoustic Imaging · Light in · Sound out</p>
-      <h1 class="page-hero__title">用声音读取光的痕迹，<br /><span class="gradient-text">重建组织内部的吸收分布。</span></h1>
-      <p class="page-hero__copy">
-        光声成像是一种融合光学激发与超声探测的成像方式。它利用组织对光的选择性吸收产生超声信号，再通过采集与重建形成图像。
-      </p>
-    </div>
-  </section>
-
-  <section class="page-content">
-    <div class="page-frame">
-      <div class="section-head" data-reveal>
-        <div>
-          <p class="section-kicker">01 / Principle</p>
-          <h2 class="section-heading">从光脉冲到图像的<br />四个关键阶段。</h2>
-        </div>
+<Layout title="光声成像 | Ray_Lee’s Research Journal" description="Ray_Lee 的光声成像科研数据库：原始论文、学习笔记与有依据的图文解读。">
+  <div class="research-page">
+    <section class="research-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">03 / RESEARCH LIBRARY</p>
+        <h1>光声成像<span>Read. Understand. Build.</span></h1>
+        <p class="hero-description">把原始论文、学习笔记与自己的理解放在一起。<br />从基础阅读到系统搭建，让每篇文献都成为研究路径上的一块拼图。</p>
+        <div class="library-metrics"><span><b>{String(papers.length).padStart(2, "0")}</b>篇论文</span><span><b>02</b>个专题</span><span><b>{String(researchCategories.length).padStart(2, "0")}</b>个分类</span></div>
       </div>
-      <div class="cards-grid cards-grid--two">
-        {imagingStages.map((stage, index) => (
-          <article class="topic-card" data-reveal data-reveal-delay={String(index % 2)}>
-            <span class="topic-card__index">0{index + 1} / IMAGING STAGE</span>
-            <h2>{stage.title}</h2>
-            <p>{stage.description}</p>
-          </article>
-        ))}
+      <div class="research-emblem" aria-hidden="true">
+        <span class="emblem-label">PHOTOACOUSTIC<br />RESEARCH ARCHIVE</span>
+        <svg viewBox="0 0 270 230" fill="none"><defs><linearGradient id="signal-gradient" x1="20" y1="100" x2="230" y2="160" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".2"/><stop offset=".5" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".2"/></linearGradient></defs><ellipse cx="136" cy="117" rx="78" ry="78" stroke="currentColor" opacity=".15"/><ellipse cx="136" cy="117" rx="59" ry="59" stroke="currentColor" opacity=".2"/><ellipse cx="136" cy="117" rx="38" ry="38" stroke="currentColor" opacity=".25"/><path d="M13 118h54l5-6 5 15 7-27 7 39 8-55 9 73 10-106 10 139 10-116 10 86 9-59 9 39 7-22 6 10 7-10h54" stroke="url(#signal-gradient)" stroke-width="1.5" stroke-linejoin="round"/><path d="M136 12v14M136 208v14M31 117h14M227 117h14" stroke="currentColor" opacity=".3"/><circle cx="136" cy="117" r="3" fill="currentColor"/></svg>
+        <span class="emblem-bottom">LIGHT → SOUND → UNDERSTANDING</span>
       </div>
-    </div>
-  </section>
+    </section>
+    <LibraryExplorer mode="papers" papers={papers} description="沿着目录阅读，每篇文献分别保留原始文件、学习记录与核心研究解读。" />
+  </div>
+</Layout>
 
-  <section class="section-block section-block--compact">
-    <div class="page-frame split-grid">
-      <article class="content-card" data-reveal>
-        <p class="section-kicker">02 / Why it matters</p>
-        <h3>光声成像的特点</h3>
-        <ol class="learning-list">
-          {characteristics.map((item) => <li>{item}</li>)}
-        </ol>
-      </article>
-      <article class="content-card" data-reveal data-reveal-delay="1">
-        <p class="section-kicker">03 / Current focus</p>
-        <h3>当前关注</h3>
-        <p class="section-copy">
-          现阶段主要梳理光声效应、声传播模型、传感器采样与基础重建方法之间的关系，并通过仿真逐步建立可验证的完整流程。
-        </p>
-        <div class="stack-cloud">
-          <span class="stack-pill">光声效应</span>
-          <span class="stack-pill">声传播</span>
-          <span class="stack-pill">信号处理</span>
-          <span class="stack-pill">图像重建</span>
-        </div>
-      </article>
-    </div>
-  </section>
-</BaseLayout>
+<style>
+  .research-page{max-width:1240px;margin:0 auto;padding:44px 36px 70px}.research-hero{display:flex;align-items:center;justify-content:space-between;gap:50px;padding:12px 0 36px;border-bottom:1px solid var(--line)}.hero-copy .eyebrow{font-size:10px;color:var(--teal);letter-spacing:.16em;margin:0 0 23px}.hero-copy h1{font-size:clamp(36px,4.8vw,57px);font-weight:500;letter-spacing:-.06em;margin:0 0 25px;line-height:1.2}.hero-copy h1>span{display:block;font:13px "JetBrains Mono",monospace;letter-spacing:.015em;color:var(--muted);margin-top:16px}.hero-description{font-size:13px;line-height:2;color:var(--muted);margin:0;max-width:610px}.library-metrics{display:flex;gap:34px;margin-top:29px}.library-metrics>span{font-size:10px;color:var(--dim);display:flex;gap:10px;align-items:baseline}.library-metrics b{font:25px "JetBrains Mono",monospace;font-weight:400;color:var(--text)}.research-emblem{width:260px;flex-shrink:0;position:relative;color:var(--teal);padding:15px 0 0}.research-emblem svg{width:100%;height:200px;display:block}.emblem-label{font:8px/1.8 "JetBrains Mono",monospace;letter-spacing:.2em;color:var(--dim);position:absolute;left:7px;top:7px}.emblem-bottom{font:8px "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--dim);display:block;text-align:center}
+  @media(max-width:800px){.research-emblem{width:190px}.research-hero{gap:20px}.hero-description{font-size:12px}.hero-copy h1{font-size:42px}.emblem-label{font-size:7px}.emblem-bottom{font-size:6px}}
+  @media(max-width:650px){.research-page{padding:32px 20px 50px}.research-emblem{display:none}.research-hero{padding-bottom:30px}.hero-copy h1{font-size:42px}.library-metrics{gap:22px}.library-metrics b{font-size:22px}.hero-copy h1>span{font-size:11px}.hero-description br{display:none}}
+</style>
