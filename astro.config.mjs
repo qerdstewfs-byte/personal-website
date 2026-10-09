@@ -8,5 +8,16 @@ export default defineConfig({
   adapter: vercel(),
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rolldownOptions: {
+        treeshake: {
+          // The Vercel adapter imports routing constants from its build module.
+          // Keep unused build tools out of the deployed function: Rolldown's
+          // native bindings are not runtime dependencies and are not traced.
+          moduleSideEffects: (id, external) =>
+            !(external && (id === 'rolldown' || id === '@vercel/routing-utils')),
+        },
+      },
+    },
   },
 });
