@@ -15,7 +15,8 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "test": "node --test tests/journal.test.mjs"
+    "test": "node --test tests/journal.test.mjs",
+    "test:runtime": "node tests/function-runtime.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "11.0.13",
