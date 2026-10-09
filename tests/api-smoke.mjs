@@ -22,7 +22,13 @@ try {
   assert.equal((await call('/api/journal', 'POST', {date:'2099-01-01',action:'reset'})).status, 400);
   assert.equal((await call('/api/journal', 'POST', {date:'2000-02-29',action:'reset'}, 'https://unrelated.example')).status, 403);
   const first = await call('/api/journal', 'POST', {date:'2000-02-29',action:'check',taskId:'pam',checked:true}); assert.equal(first.status, 200);
-  const note = await call('/api/journal', 'POST', {date:'2000-02-29',action:'note',note:'Disposable integration test',baseRevision:first.data.record.revision}); assert.equal(note.status, 200);
+  const batch = await call('/api/journal','POST',{date:'2000-02-29',action:'checks',checks:[{taskId:'course',checked:true},{taskId:'ted',checked:true}]});
+  assert.equal(batch.status,200); assert.equal(batch.data.record.revision,first.data.record.revision+1);
+  assert.equal(batch.data.record.checked.course,true); assert.equal(batch.data.record.checked.ted,true);
+  const invalidBatch = await call('/api/journal','POST',{date:'2000-02-29',action:'checks',checks:[{taskId:'course',checked:false},{taskId:'unknown',checked:true}]}); assert.equal(invalidBatch.status,400);
+  const afterInvalid = await call('/api/journal?year=2000'); assert.equal(afterInvalid.data.records['2000-02-29'].checked.course,true);
+  assert.equal((await call('/api/journal','POST',{date:'2000-02-29',action:'checks',checks:[{taskId:'pam',checked:true},{taskId:'pam',checked:false}]})).status,400);
+  const note = await call('/api/journal', 'POST', {date:'2000-02-29',action:'note',note:'Disposable integration test',baseRevision:batch.data.record.revision}); assert.equal(note.status, 200);
   const stale = await call('/api/journal', 'POST', {date:'2000-02-29',action:'note',note:'This must not overwrite',baseRevision:first.data.record.revision}); assert.equal(stale.status, 409);
   const parallel = await Promise.all([
     call('/api/journal','POST',{date:'2000-02-29',action:'check',taskId:'paper',checked:true}),
@@ -32,6 +38,7 @@ try {
   const otherDevice = await call('/api/journal?year=2000');
   const record = otherDevice.data.records['2000-02-29'];
   assert.equal(record.checked.pam, true); assert.equal(record.checked.paper, true); assert.equal(record.checked.ielts, true);
+  assert.equal(record.checked.course,true); assert.equal(record.checked.ted,true);
   assert.equal(record.note, 'Disposable integration test'); assert.equal(record.tasks.length, 7); assert.equal(otherDevice.data.editing,false);
   console.log('PASS: real cloud persistence, second-device read, merged simultaneous writes, revision conflicts, owner authorization, date validation, same-origin protection, HttpOnly session.');
 } finally {
