@@ -1,0 +1,45 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import LibraryExplorer from "../../components/LibraryExplorer.astro";
+import PaperReport from "../../components/PaperReport.astro";
+import { publishedPapers, paperCategory, researchCategories, researchGroups } from "../../lib/library";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const papers = await publishedPapers();
+  return [
+    ...researchGroups.map((group) => ({ params: { slug: group.slug }, props: { activePath: group.slug, title: group.title, description: group.description, papers } })),
+    ...researchCategories.map((category) => ({ params: { slug: category.path }, props: { activePath: category.path, title: category.title, description: category.description, papers } })),
+    ...papers.map((paper) => ({ params: { slug: `${paperCategory(paper.data.category).path}/${paper.data.slug}` }, props: { paper } })),
+  ];
+}
+
+interface Props {
+  paper?: CollectionEntry<"papers">;
+  activePath?: string;
+  title?: string;
+  description?: string;
+  papers?: CollectionEntry<"papers">[];
+}
+
+const { paper, activePath = "", title = "光声成像", description, papers = [] } = Astro.props;
+const category = researchCategories.find((item) => item.path === activePath);
+---
+
+<Layout title={`${paper?.data.title ?? title} | Ray_Lee’s Research Journal`} description={paper?.data.summary ?? description}>
+  {paper ? <PaperReport paper={paper} /> : (
+    <div class="category-page">
+      <nav class="breadcrumbs" aria-label="当前位置"><a href="/photoacoustic/">光声成像</a><span aria-hidden="true">/</span>{category && <><a href={`/photoacoustic/${category.groupSlug}/`}>{category.groupTitle}</a><span aria-hidden="true">/</span></>}<span aria-current="page">{title}</span></nav>
+      <section class="category-hero"><p class="eyebrow">RESEARCH LIBRARY / DIRECTORY</p><h1>{title}</h1><p>{description}</p></section>
+      <LibraryExplorer mode="papers" papers={papers} activePath={activePath} heading={category ? "分类文献" : "专题文献"} />
+    </div>
+  )}
+</Layout>
+
+<style>
+  a{color:inherit;text-decoration:none}
+  .category-page{max-width:1240px;margin:0 auto;padding:30px 36px 70px}.breadcrumbs{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:10px;line-height:1.8;color:var(--dim);margin-bottom:35px}.breadcrumbs a:hover{color:var(--primary)}.breadcrumbs>[aria-current]{color:var(--muted)}.category-hero{padding-bottom:28px;border-bottom:1px solid var(--line)}.category-hero .eyebrow{font-size:9px;letter-spacing:.16em;color:var(--teal);margin:0 0 17px}.category-hero h1{font-size:35px;letter-spacing:-.045em;font-weight:500;margin:0 0 16px;line-height:1.4}.category-hero>p:last-child{font-size:12px;line-height:1.9;color:var(--muted);margin:0;max-width:650px}
+  @media(max-width:650px){.category-page{padding:25px 20px 50px}.breadcrumbs{font-size:9px;margin-bottom:25px}.category-hero h1{font-size:29px}}
+</style>

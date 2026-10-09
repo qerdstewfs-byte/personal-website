@@ -1,0 +1,34 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import { noteBlocks, publishedEnglish } from "../../lib/library";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  return (await publishedEnglish()).map((entry) => ({ params: { slug: entry.data.slug }, props: { entry } }));
+}
+
+interface Props { entry: CollectionEntry<"english">; }
+const { entry } = Astro.props;
+const data = entry.data;
+const blocks = noteBlocks(entry.body);
+---
+
+<Layout title={`${data.title} | English Learning | Ray_Lee’s Research Journal`} description={data.meaning}>
+  <article class="language-record">
+    <nav class="breadcrumbs" aria-label="当前位置"><a href="/english/">英语学习</a><span aria-hidden="true">/</span><span>{data.type === "speaking" ? "口语语料" : "单词"}</span><span aria-hidden="true">/</span><span aria-current="page">{data.category}</span></nav>
+    <header class="record-header"><p class="eyebrow">{data.type === "speaking" ? "SPEAKING CORPUS" : "VOCABULARY"} / {data.category}</p><h1 lang="en">{data.title}</h1>{data.pronunciation && <p class="pronunciation">{data.pronunciation}</p>}<p class="meaning">{data.meaning}</p>{data.tags.length > 0 && <div class="record-tags">{data.tags.map((tag) => <span>{tag}</span>)}</div>}{data.updated && <p class="updated">更新于 {data.updated}</p>}</header>
+    {data.context && <section class="record-section"><p class="section-kicker">WHEN TO USE IT</p><h2>使用场景</h2><p class="context">{data.context}</p></section>}
+    {data.examples.length > 0 && <section class="record-section"><p class="section-kicker">IN CONTEXT</p><h2>例句与表达</h2><div class="examples">{data.examples.map((example, index) => <div class="example"><span class="example-number">{String(index + 1).padStart(2, "0")}</span><div><p lang="en">{example.english}</p>{example.chinese && <p class="translation">{example.chinese}</p>}</div></div>)}</div></section>}
+    {blocks.length > 0 && <section class="record-section reading-notes"><p class="section-kicker">PERSONAL NOTES</p><h2>学习笔记</h2>{blocks.map((block) => block.type === "heading" ? <h3>{block.text}</h3> : block.type === "paragraph" ? <p>{block.text}</p> : block.type === "quote" ? <blockquote>{block.text}</blockquote> : block.ordered ? <ol>{block.items.map((item) => <li>{item}</li>)}</ol> : <ul>{block.items.map((item) => <li>{item}</li>)}</ul>)}</section>}
+    {data.sources.length > 0 && <section class="record-section"><p class="section-kicker">SOURCES</p><h2>资料来源</h2><ul class="source-list">{data.sources.map((source) => <li><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title} <span aria-hidden="true">↗</span></a></li>)}</ul></section>}
+    <footer class="record-footer"><span>RAY_LEE / LANGUAGE NOTES</span><a href="/english/">返回英语资料库 <span aria-hidden="true">↗</span></a></footer>
+  </article>
+</Layout>
+
+<style>
+  a{color:inherit;text-decoration:none}.record-header{display:block;align-items:normal;justify-content:normal;border:0}
+  .language-record{max-width:850px;margin:0 auto;padding:30px 36px 70px}.breadcrumbs{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:10px;line-height:1.8;color:var(--dim);margin-bottom:44px}.breadcrumbs a:hover{color:var(--primary)}.record-header{padding:0 0 33px}.record-header .eyebrow{font-size:9px;letter-spacing:.13em;color:var(--teal);margin:0 0 22px}.record-header h1{font-size:clamp(32px,5vw,49px);font-weight:500;letter-spacing:-.05em;line-height:1.25;margin:0 0 20px;overflow-wrap:anywhere}.pronunciation{font-size:14px;line-height:1.8;color:var(--dim);margin:-7px 0 18px}.meaning{font-size:16px;line-height:1.9;color:var(--muted);white-space:pre-line;margin:0}.record-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:23px}.record-tags span{font-size:9px;padding:5px 8px;border:1px solid var(--line);border-radius:5px;color:var(--muted)}.updated{font-size:9px;color:var(--dim);margin:20px 0 0}.record-section{border-top:1px solid var(--line);padding:29px 0}.section-kicker{font:8px "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--teal);margin:0 0 13px}.record-section h2{font-size:23px;font-weight:500;letter-spacing:-.03em;margin:0 0 23px}.context{font-size:13px;line-height:2;color:var(--muted);white-space:pre-line;margin:0}.example{display:flex;gap:20px;align-items:baseline;padding:0 0 22px}.example+.example{border-top:1px solid var(--line);padding-top:23px}.example:last-child{padding-bottom:0}.example-number{font:11px "JetBrains Mono",monospace;color:var(--dim)}.example>div>p:first-child{font-size:21px;line-height:1.7;margin:0 0 9px;letter-spacing:-.02em}.translation{font-size:12px;line-height:1.9;color:var(--muted);margin:0}.reading-notes p,.reading-notes ul,.reading-notes ol,.reading-notes blockquote{font-size:13px;line-height:2;color:var(--muted);white-space:pre-line;margin:0 0 18px}.reading-notes h3{font-size:16px;font-weight:500;margin:22px 0 12px}.reading-notes ul,.reading-notes ol{padding-left:23px}.reading-notes blockquote{padding-left:17px;border-left:2px solid var(--teal)}.source-list{padding-left:19px;line-height:2;font-size:12px;color:var(--muted);margin:0}.source-list li+li{margin-top:8px}.source-list a:hover{color:var(--primary)}.record-footer{border-top:1px solid var(--line);padding-top:24px;display:flex;gap:20px;justify-content:space-between;align-items:center}.record-footer>span{font:8px "JetBrains Mono",monospace;letter-spacing:.13em;color:var(--dim)}.record-footer>a{font-size:11px;color:var(--teal)}
+  @media(max-width:650px){.language-record{padding:25px 20px 50px}.breadcrumbs{font-size:9px;margin-bottom:30px}.record-header h1{font-size:34px}.meaning{font-size:14px}.record-section h2{font-size:21px}.example>div>p:first-child{font-size:18px}.record-footer{flex-wrap:wrap}.example{gap:13px}.context,.reading-notes p{font-size:12px}}
+</style>
