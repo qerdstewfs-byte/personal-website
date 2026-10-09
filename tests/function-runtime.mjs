@@ -8,6 +8,8 @@ import path from 'node:path';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const artifact = path.join(repo, '.vercel/output/functions/_render.func');
+const staticHome = readFileSync(path.join(repo, '.vercel/output/static/index.html'), 'utf8');
+assert.ok(staticHome.includes('Ray_Lee') && staticHome.includes('id="dailyBoard"'), 'Homepage must be emitted as a static journal shell.');
 const isolated = mkdtempSync(path.join(path.dirname(repo), 'function-runtime-'));
 try {
   cpSync(artifact, isolated, { recursive: true });
@@ -16,13 +18,10 @@ try {
   writeFileSync(path.join(isolated, 'smoke.mjs'), `
     import assert from 'node:assert/strict';
     import handler from './dist/server/entry.mjs';
-    const home = await handler.fetch(new Request('https://journal.example/'));
-    assert.equal(home.status, 200);
-    assert.ok((await home.text()).includes('Ray_Lee'));
     const session = await handler.fetch(new Request('https://journal.example/api/session'));
     assert.equal(session.status, 200);
     assert.equal((await session.json()).editing, false);
-    console.log('PASS: isolated Vercel function starts and serves homepage and session API.');
+    console.log('PASS: homepage is prerendered; isolated Vercel function starts and serves session API.');
   `);
   const child = spawnSync(process.execPath, ['smoke.mjs'], { cwd: isolated, encoding: 'utf8', timeout: 30_000 });
   assert.equal(child.status, 0, child.stderr || child.error?.message || 'Isolated function failed.');
