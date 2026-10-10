@@ -2,7 +2,11 @@ import { beijingClock, untilNextMinute } from '../lib/journal-dates';
 import { journalPermissions } from '../lib/permissions';
 
 const themeButton = document.querySelector<HTMLButtonElement>('#themeBtn');
-function themeIcon() { if (themeButton) themeButton.textContent = document.documentElement.dataset.theme === 'light' ? '☾' : '☼'; }
+function themeIcon() {
+  const label = document.documentElement.dataset.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+  if (themeButton) { themeButton.title = label; themeButton.setAttribute('aria-label', label); }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#ffffff' : '#101216');
+}
 themeIcon();
 themeButton?.addEventListener('click', () => {
   const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
@@ -15,7 +19,8 @@ fullscreenButton?.addEventListener('click', async () => {
   catch { fullscreenButton.title = 'Use your browser’s fullscreen command.'; }
 });
 document.addEventListener('fullscreenchange', () => {
-  const label = fullscreenButton?.querySelector('.button-label'); if (label) label.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+  const label = document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen';
+  if (fullscreenButton) { fullscreenButton.title = label; fullscreenButton.setAttribute('aria-label', label); }
 });
 const clockTime = document.querySelector('#clock');
 const clockDate = document.querySelector('#clockDate');
@@ -38,8 +43,9 @@ const unlock = document.querySelector<HTMLButtonElement>('#unlockBtn');
 let editing = false;
 const unsubscribePermissions = journalPermissions.subscribe(value => {
   editing = value.editing;
-  if (access) access.textContent = editing ? 'Lock editing' : 'Enable editing';
-  const status = document.querySelector('#accessStatus'); if (status) status.textContent = editing ? 'Editor mode' : 'Public view';
+  if (access) { access.textContent = editing ? 'Lock editing' : 'Unlock editing'; access.title = access.textContent; }
+  const status = document.querySelector<HTMLElement>('#accessStatus');
+  if (status) { status.textContent = editing ? 'Editing' : 'View only'; status.dataset.editing = String(editing); }
 });
 // The daily journal already returns permission state with its records.
 // Library pages still need a session read to update owner controls.

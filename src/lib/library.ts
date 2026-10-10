@@ -5,21 +5,21 @@ import { relative, resolve, sep } from "node:path";
 export const researchGroups = [
   {
     slug: "pam-system",
-    title: "PAM 系统构建",
-    description: "从激光二极管驱动到系统搭建，按模块整理文献与学习记录。",
+    title: "PAM Systems",
+    description: "PAM system design and instrumentation.",
     categories: [
-      { slug: "laser-diode-driver", title: "激光二极管驱动", description: "激光二极管驱动相关论文、原始资料与学习笔记。" },
-      { slug: "system-building", title: "系统搭建", description: "PAM 系统搭建相关论文、原始资料与学习笔记。" },
+      { slug: "laser-diode-driver", title: "Laser Diode Drivers", description: "Laser diode drivers for photoacoustic imaging." },
+      { slug: "system-building", title: "System Construction", description: "Photoacoustic microscopy system construction." },
     ],
   },
   {
     slug: "fundamentals",
-    title: "光声基础学习类文章",
-    description: "按 PACT、PAM、PAME 归档，把原论文与自己的理解放在一起。",
+    title: "Fundamentals",
+    description: "Photoacoustic imaging fundamentals.",
     categories: [
-      { slug: "pact", title: "PACT", description: "PACT 相关文献与学习记录。" },
-      { slug: "pam", title: "PAM", description: "PAM 相关文献与学习记录。" },
-      { slug: "pame", title: "PAME", description: "PAME 相关文献与学习记录。" },
+      { slug: "pact", title: "PACT", description: "Photoacoustic computed tomography." },
+      { slug: "pam", title: "PAM", description: "Photoacoustic microscopy." },
+      { slug: "pame", title: "PAME", description: "PAME research papers and notes." },
     ],
   },
 ] as const;
@@ -69,7 +69,7 @@ export async function publishedPapers() {
       }
     }
   }
-  return entries.sort((a, b) => b.data.year - a.data.year || a.data.title.localeCompare(b.data.title, "zh-CN"));
+  return entries.sort((a, b) => b.data.year - a.data.year || a.data.title.localeCompare(b.data.title, "en"));
 }
 
 export async function publishedEnglish() {

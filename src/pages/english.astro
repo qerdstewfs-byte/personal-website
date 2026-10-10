@@ -2,34 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import LibraryExplorer from "../components/LibraryExplorer.astro";
 import { publishedEnglish } from "../lib/library";
-
 export const prerender = true;
-
 const entries = await publishedEnglish();
-const speakingCount = entries.filter((entry) => entry.data.type === "speaking").length;
-const vocabularyCount = entries.filter((entry) => entry.data.type === "vocabulary").length;
 ---
-
-<Layout title="English Learning | Ray_Lee’s Research Journal" description="Ray_Lee 的英语学习记录：口语语料、单词、使用场景与例句。">
-  <div class="english-page">
-    <section class="english-hero">
-      <div class="hero-copy">
-        <p class="eyebrow">ENGLISH LEARNING</p>
-        <h1>英语学习</h1>
-        <p class="hero-description">收集口语表达与单词，按使用场景回顾自己的语言积累。</p>
-      </div>
-      <div class="hero-index" aria-label="学习资料数量"><span><b>{speakingCount}</b>口语语料</span><span><b>{vocabularyCount}</b>单词记录</span></div>
-    </section>
+<Layout title="English Learning | Ray_Lee’s Research Journal" description="Speaking, vocabulary, and English learning notes.">
+  <div class="library-page">
+    <header class="page-heading"><h1>English Learning</h1></header>
     <LibraryExplorer mode="english" english={entries} />
   </div>
 </Layout>
-
-<style>
-  .english-page{max-width:1240px;margin:0 auto;padding:34px 0 64px}
-  .english-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;padding-bottom:28px;border-bottom:1px solid var(--line)}
-  .hero-copy{min-width:0;max-width:740px}.eyebrow{font-size:14px;font-weight:600;letter-spacing:.08em;color:var(--teal);margin:0 0 8px}
-  .hero-copy h1{font-size:36px;font-weight:650;line-height:1.3;letter-spacing:-.035em;margin:0 0 10px}.hero-description{font-size:17px;line-height:1.8;color:var(--muted);margin:0}
-  .hero-index{display:flex;gap:26px;flex-shrink:0}.hero-index>span{display:grid;gap:3px;font-size:14px;color:var(--muted);white-space:nowrap}.hero-index b{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);line-height:1.3}
-  @media(max-width:760px){.english-page{padding:24px 0 48px}.english-hero{align-items:flex-start;flex-direction:column;gap:20px;padding-bottom:24px}.hero-copy h1{font-size:32px}.hero-index{gap:26px}.hero-index>span{display:flex;align-items:baseline;gap:8px}.hero-index b{font-size:22px}}
-  @media(max-width:380px){.english-page{padding-left:0;padding-right:0}}
-</style>

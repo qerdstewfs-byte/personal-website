@@ -3,7 +3,11 @@ import '../styles/global.css';
 interface Props { title: string; description?: string }
 const { title, description = "Ray_Lee’s Research Journal — daily research records, English learning, and photoacoustic imaging notes." } = Astro.props;
 const path = Astro.url.pathname;
-const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', label: 'English Learning' }, { href: '/photoacoustic', label: 'Photoacoustic Imaging' } ];
+const navigation = [
+  { href: '/', label: 'Daily Journal', short: 'Journal', icon: 'M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3M8 2h8v4H8zM8 11h8M8 16h5' },
+  { href: '/english', label: 'English Learning', short: 'English', icon: 'M12 5v16M12 5C9 2 5 3 2 4v15c3-1 7-2 10 1 3-3 7-2 10-1V4c-3-1-7-2-10 1Z' },
+  { href: '/photoacoustic', label: 'Photoacoustic Imaging', short: 'Research', icon: 'M3 20h18M7 20V10M12 20V4M17 20v-7M4 10h6M9 4h6M14 13h6' },
+];
 ---
 <!doctype html>
 <html lang="en" data-theme="light">
@@ -11,8 +15,9 @@ const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f5f7f6" />
+    <meta name="theme-color" content="#ffffff" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>{title}</title>
     <script is:inline>try { document.documentElement.dataset.theme = localStorage.getItem('ray-journal-theme') === 'dark' ? 'dark' : 'light'; } catch {}</script>
   </head>
@@ -22,27 +27,27 @@ const navigation = [ { href: '/', label: 'Daily Journal' }, { href: '/english', 
       <header class="journal-header">
         <a class="brand" href="/" aria-label="Ray_Lee’s Research Journal home">
           <span class="brand-mark" aria-hidden="true">R</span>
-          <span class="brand-copy"><span class="brand-name">Ray_Lee’s Research Journal</span><span class="brand-meta">Research, learning & everyday notes</span></span>
+          <span class="brand-name">Ray_Lee’s Research Journal</span>
         </a>
         <div class="toolbar">
           <div class="clock"><div class="clock-time" id="clock">--:--</div><div class="clock-date" id="clockDate">Beijing · UTC+08:00</div></div>
-          <button class="icon-btn" id="themeBtn" title="Toggle light or dark theme" aria-label="Toggle theme">☼</button>
-          <button class="subtle-btn" id="fullscreenBtn" title="Enter fullscreen mode">⛶ <span class="button-label">Fullscreen</span></button>
-          <button class="subtle-btn" id="editorAccessBtn" title="Owner editing">Enable editing</button>
+          <button class="icon-btn" id="themeBtn" title="Switch to dark theme" aria-label="Switch to dark theme"><svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 14a8 8 0 0 1-10-10A8.5 8.5 0 1 0 20 14Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button>
+          <button class="icon-btn" id="fullscreenBtn" title="Enter fullscreen" aria-label="Enter fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+          <button class="subtle-btn" id="editorAccessBtn" title="Unlock editing">Unlock editing</button>
         </div>
       </header>
       <nav class="site-nav" aria-label="Main navigation">
-        {navigation.map((item, index) => <a href={item.href} class:list={{ active: item.href === '/' ? path === '/' : path.startsWith(item.href) }} aria-current={(item.href === '/' ? path === '/' : path.startsWith(item.href)) ? 'page' : undefined}><span class="nav-index">0{index + 1}</span>{item.label}</a>)}
-        <span class="nav-status" id="accessStatus">Public view</span>
+        {navigation.map((item) => <a href={item.href} class:list={{ active: item.href === '/' ? path === '/' : path.startsWith(item.href) }} aria-label={item.label} aria-current={(item.href === '/' ? path === '/' : path.startsWith(item.href)) ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d={item.icon}/></svg><span class="nav-long">{item.label}</span><span class="nav-short">{item.short}</span></a>)}
+        <span class="nav-status" id="accessStatus">View only</span>
       </nav>
       <main id="content"><slot /></main>
-      <footer class="site-footer"><span>Ray_Lee’s Research Journal · A record of things learned</span><span>Beijing time · UTC+08:00</span></footer>
+      <footer class="site-footer"><span>Ray_Lee’s Research Journal</span><span>Beijing · UTC+08:00</span></footer>
     </div>
     <dialog id="editorAccessDialog" aria-labelledby="accessTitle">
       <form id="editorAccessForm">
-        <div class="dialog-head"><div><h2 id="accessTitle">Enable editing</h2><p>Public reading stays open. Your management password unlocks changes.</p></div><button type="button" class="icon-btn" id="closeAccess" aria-label="Close">×</button></div>
-        <div class="dialog-body"><label class="access-label" for="managementPassword">Management password</label><input class="editor-input" id="managementPassword" type="password" required maxlength="200" autocomplete="current-password" /><p id="accessError" class="access-error" role="alert"></p></div>
-        <div class="dialog-foot"><span class="save-hint">Editor access lasts 7 days on this device.</span><button class="filled-btn" type="submit" id="unlockBtn">Unlock editing</button></div>
+        <div class="dialog-head"><h2 id="accessTitle">Unlock editing</h2><button type="button" class="icon-btn" id="closeAccess" aria-label="Close">×</button></div>
+        <div class="dialog-body"><label class="access-label" for="managementPassword">Password</label><input class="editor-input" id="managementPassword" type="password" required maxlength="200" autocomplete="current-password" /><p id="accessError" class="access-error" role="alert"></p></div>
+        <div class="dialog-foot"><span class="save-hint">Stays unlocked for 7 days.</span><button class="filled-btn" type="submit" id="unlockBtn">Unlock</button></div>
       </form>
     </dialog>
     <script src="../scripts/shell.ts"></script>
