@@ -2,31 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import LibraryExplorer from "../components/LibraryExplorer.astro";
 import { publishedPapers, researchCategories } from "../lib/library";
-
 export const prerender = true;
-
 const papers = await publishedPapers();
 ---
-
-<Layout title="光声成像 | Ray_Lee’s Research Journal" description="Ray_Lee 的光声成像科研数据库：原始论文、学习笔记与有依据的图文解读。">
-  <div class="research-page">
-    <section class="research-hero">
-      <div class="hero-copy">
-        <p class="eyebrow">RESEARCH LIBRARY</p>
-        <h1>光声成像</h1>
-        <p class="hero-description">从理论基础到系统搭建，集中保存原始论文、学习笔记与图文解读。</p>
-      </div>
-      <div class="library-metrics" aria-label="科研资料数量"><span><b>{papers.length}</b>篇论文</span><span><b>{researchCategories.length}</b>个分类</span></div>
-    </section>
+<Layout title="Photoacoustic Imaging | Ray_Lee’s Research Journal" description="Photoacoustic imaging papers and research notes.">
+  <div class="library-page">
+    <header class="page-heading"><h1>Photoacoustic Imaging</h1><span class="page-count">{researchCategories.length} categories</span></header>
     <LibraryExplorer mode="papers" papers={papers} />
   </div>
 </Layout>
-
-<style>
-  .research-page{max-width:1240px;margin:0 auto;padding:34px 0 64px}
-  .research-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;padding-bottom:28px;border-bottom:1px solid var(--line)}
-  .hero-copy{min-width:0;max-width:760px}.eyebrow{font-size:14px;font-weight:600;letter-spacing:.08em;color:var(--teal);margin:0 0 8px}.hero-copy h1{font-size:36px;font-weight:650;line-height:1.3;letter-spacing:-.035em;margin:0 0 10px}.hero-description{font-size:17px;line-height:1.8;color:var(--muted);margin:0}
-  .library-metrics{display:flex;gap:26px;flex-shrink:0}.library-metrics>span{display:grid;gap:3px;font-size:14px;color:var(--muted);white-space:nowrap}.library-metrics b{font-size:28px;font-weight:600;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--text)}
-  @media(max-width:760px){.research-page{padding:24px 0 48px}.research-hero{align-items:flex-start;flex-direction:column;gap:20px;padding-bottom:24px}.hero-copy h1{font-size:32px}.library-metrics{gap:26px}.library-metrics>span{display:flex;align-items:baseline;gap:8px}.library-metrics b{font-size:22px}}
-  @media(max-width:380px){.research-page{padding-left:0;padding-right:0}}
-</style>

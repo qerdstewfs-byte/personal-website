@@ -1,7 +1,7 @@
 import { beijingDate, shiftDate, DEFAULT_TASKS } from '../lib/journal';
 import type { Task, DayRecord, JournalPayload } from '../lib/journal';
 import { CheckmarkBuffer } from '../lib/checkmarks';
-import { formatJournalDate as format, beijingHour, formatSavedTime } from '../lib/journal-dates';
+import { formatJournalDate as format, formatSavedTime } from '../lib/journal-dates';
 import { journalPermissions } from '../lib/permissions';
 
 const CATEGORIES = ['Research', 'English', 'Development'] as const;
@@ -157,8 +157,6 @@ function initJournal() {
     $('progressRing').setAttribute('aria-label',known ? `${s.done} of ${total} tasks completed, ${s.percent} percent` : 'Progress has not loaded');
     $('percent').textContent = known ? `${s.percent}%` : '—';
     $('doneCount').textContent = known ? `${s.done} / ${total}` : `— / ${total}`;
-    $('progressFill').style.width = `${s.percent}%`;
-    $('motivation').textContent = !known ? 'Connect to read this day’s progress.' : selectedDate > today ? 'This day is still ahead.' : s.percent === 100 && s.total ? 'Everything is done. Enjoy your progress!' : !s.done ? 'Your first step starts here.' : s.percent >= 70 ? 'Almost there. Keep going!' : 'Great progress. One step at a time.';
   }
 
   function drawWeek() {
@@ -245,24 +243,21 @@ function initJournal() {
     const summary = $('yearSummary');
     summary.replaceChildren();
     if (!loadedYears.has(displayedYear)) { summary.append(make('span',undefined,loading ? 'Loading recorded days…' : 'Connect to load this year’s records.')); return; }
-    for (const [count,label] of [[savedDays.length,'recorded days'],[completeDays,'complete days'],[doneTasks,'completed tasks'],[notes,'daily notes']] as const) {
-      const item = make('span'); item.append(make('strong',undefined,String(count)),document.createTextNode(label)); summary.append(item);
+    for (const [count,label] of [[savedDays.length,'recorded day'],[completeDays,'complete day'],[doneTasks,'completed task'],[notes,'daily note']] as const) {
+      const item = make('span'); item.append(make('strong',undefined,String(count)),document.createTextNode(`${label}${count === 1 ? '' : 's'}`)); summary.append(item);
     }
   }
 
   function drawStatus() {
     const isFuture = selectedDate > today;
-    const hour = beijingHour();
-    $('greeting').textContent = selectedDate === today ? hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening' : isFuture ? 'One step at a time' : 'Your progress, remembered';
-    $('dayLabel').textContent = `${selectedDate === today ? 'TODAY' : isFuture ? 'LOOKING AHEAD' : 'FROM THE ARCHIVE'} · ${format(selectedDate,{year:'numeric',month:'long',day:'numeric'}).toUpperCase()}`;
-    $('selectedDayText').textContent = format(selectedDate,{weekday:'long',month:'long',day:'numeric'});
-    $('selectedDaySub').textContent = `Beijing time · ${selectedDate === today ? 'A fresh step forward.' : isFuture ? 'Future dates are read only.' : 'Every small step is remembered.'}`;
-    $('boardTitle').textContent = selectedDate === today ? "Today's checklist" : `${format(selectedDate,{month:'short',day:'numeric'})}'s checklist`;
-    $('progressLabel').textContent = selectedDate === today ? "Today's progress" : 'Selected day’s progress';
-    $('boardDescription').textContent = !hasLoaded() ? 'Saved status has not loaded. The daily task template is shown below.' : record() ? 'This day keeps its own saved task list.' : 'No saved record yet. These are the current daily tasks.';
+    $('dayLabel').textContent = selectedDate === today ? 'Today' : isFuture ? 'Upcoming' : 'Archive';
+    $('selectedDayText').textContent = format(selectedDate,{weekday:'short',month:'long',day:'numeric',year:'numeric'});
     $('returnToday').hidden = selectedDate === today;
     $('retryLoad').hidden = !lastError;
-    $('accessHint').textContent = loading ? 'Loading cloud records…' : !connected ? 'Cloud records could not be loaded. Please retry the connection.' : !cloud ? 'Cloud storage is not connected. Records cannot be saved yet.' : isFuture ? 'Future dates can be viewed. Editing opens when the date arrives in Beijing.' : editing ? 'Owner editing is active. Changes are saved to the cloud and synced across devices.' : 'Public reading · Only the owner can edit. Use Owner access in the header to make changes.';
+    const connectionMessage = loading ? '' : !connected ? 'Unable to load records. Retry to reconnect.' : !cloud ? 'Storage unavailable. Changes cannot be saved.' : isFuture ? 'Future date · View only' : '';
+    $('accessHint').textContent = connectionMessage;
+    $('journalStatus').hidden = !connectionMessage && !lastError;
+    $('journalStatus').dataset.error = String(!loading && (!connected || !cloud));
     const busy = pending > 0 || checkmarks.pending;
     $<HTMLButtonElement>('editTasks').disabled = !canEdit() || busy;
     $<HTMLButtonElement>('resetDay').disabled = !canEdit() || busy || !stats(record()).done;
@@ -273,10 +268,11 @@ function initJournal() {
     $<HTMLInputElement>('applyToFuture').disabled ||= selectedDate !== today;
     for (const id of ['cancelConflict','useCloudNote','keepDraftNote','cancelReset']) $<HTMLButtonElement>(id).disabled = pending > 0;
     $('retryChecks').hidden = !checkFailed || !checkmarks.pending || !canEdit();
-    $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Checkmarks not saved. Your choices are kept here; retry saving.' : busy ? 'Saving changes to the cloud… You can keep checking tasks.' : lastError ? lastError : !hasLoaded() ? 'Connecting to the journal…' : record() ? `Saved in the cloud · ${record()!.updatedAt ? formatSavedTime(record()!.updatedAt) + ' Beijing' : selectedDate}` : 'No saved record for this date yet.';
+    $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Not saved · Retry' : busy ? 'Saving…' : lastError ? lastError : !hasLoaded() ? 'Loading…' : record() ? `Saved · ${record()!.updatedAt ? formatSavedTime(record()!.updatedAt) : selectedDate}` : 'No record yet';
+    $('footerStatus').dataset.error = String(Boolean(lastError) || (checkFailed && checkmarks.pending));
     $('retryNote').hidden = !noteFailed || !canEdit();
     $<HTMLButtonElement>('retryNote').textContent = noteConflict ? 'Review versions' : 'Retry saving';
-    $('saveHint').textContent = noteConflict ? 'Another device changed this note. Your draft is safe here; review both versions.' : noteFailed ? 'Note not saved. Your text is still here; retry when connected.' : noteDirty ? 'Unsaved changes · Saving shortly…' : pending > 0 ? 'Saving…' : !canEdit() ? record()?.note ? 'Saved daily note · Public reading' : 'No note saved for this date.' : record() ? 'Saved in the cloud · Notes are different every day' : 'Autosaves when you write · Notes are different every day';
+    $('saveHint').textContent = noteConflict ? 'Changed on another device · Review versions' : noteFailed ? 'Not saved · Your draft is preserved' : noteDirty ? 'Unsaved changes…' : pending > 0 ? 'Saving…' : !canEdit() ? 'View only' : record()?.note ? 'Saved' : 'Autosave on';
   }
 
   function render(replaceNote = false, changedDates?: ReadonlySet<string>) {
@@ -468,7 +464,7 @@ function initJournal() {
     if (!canEdit()) return;
     $('editRows').replaceChildren(); tasks().forEach(addEditorRow);
     editorBaseRevision = record()?.revision ?? 0;
-    $('editorDate').textContent = `${format(selectedDate,{month:'long',day:'numeric',year:'numeric'})} · Other saved days keep their own tasks.`;
+    $('editorDate').textContent = format(selectedDate,{month:'long',day:'numeric',year:'numeric'});
     $<HTMLInputElement>('applyToFuture').checked = false;
     $<HTMLInputElement>('applyToFuture').disabled = selectedDate !== today;
     $('templateHint').textContent = selectedDate === today ? 'Existing daily records keep their own task lists.' : 'To change the default for unrecorded days, edit today’s checklist.';
