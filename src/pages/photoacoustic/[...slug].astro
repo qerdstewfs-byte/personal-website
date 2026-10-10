@@ -3,6 +3,7 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import LibraryExplorer from "../../components/LibraryExplorer.astro";
 import PaperReport from "../../components/PaperReport.astro";
+import PaperPresentation from "../../components/PaperPresentation.astro";
 import { publishedPapers, paperCategory, researchCategories, researchGroups } from "../../lib/library";
 
 export const prerender = true;
@@ -29,7 +30,7 @@ const category = researchCategories.find((item) => item.path === activePath);
 ---
 
 <Layout title={`${paper?.data.title ?? title} | Ray_Lee’s Research Journal`} description={paper?.data.summary ?? description}>
-  {paper ? <PaperReport paper={paper} /> : (
+  {paper ? (paper.data.presentation ? <PaperPresentation paper={paper} /> : <PaperReport paper={paper} />) : (
     <div class="category-page">
       <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Photoacoustic Imaging</a><span aria-hidden="true">/</span>{category && <><a href={`/photoacoustic/${category.groupSlug}/`}>{category.groupTitle}</a><span aria-hidden="true">/</span></>}<span aria-current="page">{title}</span></nav>
       <header class="page-heading"><h1>{title}</h1></header>
