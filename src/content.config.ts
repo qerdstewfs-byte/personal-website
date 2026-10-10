@@ -29,11 +29,31 @@ const figure = z.object({
   caption: z.string().min(1),
   attribution: z.string().min(1),
   source: sourceUrl.optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
 });
 const explanation = z.object({
   title: z.string().min(1),
   text: z.string().min(1),
   figureIds: z.array(slug).default([]),
+});
+
+const slide = z.object({
+  id: slug,
+  section: z.string().min(1),
+  title: z.string().min(1),
+  layout: z.enum(["cover", "split", "wide", "text", "references"]).default("text"),
+  lead: z.string().optional(),
+  paragraphs: z.array(z.string().min(1)).default([]),
+  points: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })).default([]),
+  metrics: z.array(z.object({ value: z.string().min(1), label: z.string().min(1) })).default([]),
+  flow: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })).default([]),
+  relation: z.string().optional(),
+  takeaway: z.string().optional(),
+  figureIds: z.array(slug).default([]),
+  sourceNote: z.string().min(1),
+  sourcePage: z.number().int().positive().optional(),
+  sources: z.array(source).default([]),
 });
 
 const papers = defineCollection({
@@ -73,6 +93,10 @@ const papers = defineCollection({
     conclusions: z.array(z.string().min(1)).default([]),
     figures: z.array(figure).default([]),
     references: z.array(source).default([]),
+    presentation: z.object({
+      title: z.string().min(1),
+      slides: z.array(slide).min(1).max(40),
+    }).optional(),
   }).superRefine((data, context) => {
     if (data.status === "published") {
       if (!data.problem?.trim()) context.addIssue({ code: "custom", path: ["problem"], message: "A published report needs a source-grounded research problem." });
@@ -94,6 +118,14 @@ const papers = defineCollection({
         if (!ids.has(id)) context.addIssue({ code: "custom", path: [section, index, "figureIds"], message: `Unknown figure ID: ${id}` });
       }));
     }
+    const slideIds = new Set<string>();
+    data.presentation?.slides.forEach((item, index) => {
+      if (slideIds.has(item.id)) context.addIssue({ code: "custom", path: ["presentation", "slides", index, "id"], message: "Slide IDs must be unique." });
+      slideIds.add(item.id);
+      item.figureIds.forEach((id) => {
+        if (!ids.has(id)) context.addIssue({ code: "custom", path: ["presentation", "slides", index, "figureIds"], message: `Unknown figure ID: ${id}` });
+      });
+    });
   }),
 });
 
