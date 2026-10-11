@@ -22,12 +22,16 @@ if (deck) {
     previous.disabled = current === 0;
     next.disabled = current === slides.length - 1;
     count.textContent = `${current + 1} / ${slides.length}`;
+    deck!.style.setProperty("--deck-progress", String((current + 1) / slides.length));
     reading.textContent = readAll ? "Present" : "Read all";
     reading.setAttribute("aria-pressed", String(readAll));
     if (updateHash) window.history.replaceState(null, "", `#${slides[current].id}`);
   }
   function go(index: number) {
-    current = Math.max(0, Math.min(slides.length - 1, index));
+    const target = Math.max(0, Math.min(slides.length - 1, index));
+    // Lets CSS slide the incoming slide in from the side the reader is moving toward.
+    deck!.dataset.direction = target < current ? "back" : "forward";
+    current = target;
     render(true);
     if (document.activeElement === next && next.disabled) previous.focus({ preventScroll: true });
     if (document.activeElement === previous && previous.disabled) next.focus({ preventScroll: true });

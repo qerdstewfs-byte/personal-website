@@ -4,10 +4,14 @@ import LibraryExplorer from "../components/LibraryExplorer.astro";
 import { publishedPapers, researchCategories } from "../lib/library";
 export const prerender = true;
 const papers = await publishedPapers();
+const figureCount = papers.reduce((total, paper) => total + paper.data.figures.length, 0);
+const sourceFiles = papers.reduce((total, paper) => total + Number(Boolean(paper.data.downloads.pdf)) + Number(Boolean(paper.data.downloads.notes)), 0);
+const years = papers.map((paper) => paper.data.year);
 ---
 <Layout title="Photoacoustic Imaging | Ray_Lee’s Research Journal" description="Photoacoustic imaging papers and research notes.">
   <div class="library-page">
-    <header class="page-heading"><h1>Photoacoustic Imaging</h1><span class="page-count">{researchCategories.length} categories</span></header>
+    <header class="page-heading"><div><p class="eyebrow">Paper library</p><h1>Photoacoustic Imaging</h1><p class="lede">Annotated readings on photoacoustic systems and fundamentals, with illustrated reports built from the original sources.</p></div></header>
+    <dl class="fact-strip rise" style="--i:2"><div><dt>Papers</dt><dd>{papers.length}</dd></div><div><dt>Categories</dt><dd>{researchCategories.length}</dd></div><div><dt>Figures</dt><dd>{figureCount}</dd></div><div><dt>Source files</dt><dd>{sourceFiles}<small>PDF</small></dd></div><div><dt>Span</dt><dd>{years.length ? (Math.min(...years) === Math.max(...years) ? Math.min(...years) : `${Math.min(...years)}–${Math.max(...years)}`) : "—"}</dd></div></dl>
     <LibraryExplorer mode="papers" papers={papers} />
   </div>
 </Layout>

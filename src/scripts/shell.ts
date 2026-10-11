@@ -5,12 +5,14 @@ const themeButton = document.querySelector<HTMLButtonElement>('#themeBtn');
 function themeIcon() {
   const label = document.documentElement.dataset.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
   if (themeButton) { themeButton.title = label; themeButton.setAttribute('aria-label', label); }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#ffffff' : '#101216');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#f7f5f0' : '#0f1115');
 }
 themeIcon();
 themeButton?.addEventListener('click', () => {
   const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-  document.documentElement.dataset.theme = theme; themeIcon();
+  const apply = () => { document.documentElement.dataset.theme = theme; themeIcon(); };
+  // Cross-fade the whole page between themes where the View Transitions API exists.
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(apply); else apply();
   try { localStorage.setItem('ray-journal-theme', theme); } catch {}
 });
 const fullscreenButton = document.querySelector<HTMLButtonElement>('#fullscreenBtn');
