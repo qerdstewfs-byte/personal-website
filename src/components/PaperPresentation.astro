@@ -1,28 +1,30 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { paperCategory } from "../lib/library";
+import { presentationLabels } from "../lib/presentation-labels";
 interface Props { paper: CollectionEntry<"papers">; }
 const { paper } = Astro.props;
 const data = paper.data;
 const presentation = data.presentation!;
+const labels = presentationLabels(presentation.language);
 const category = paperCategory(data.category);
 const downloads = [
-  { file: data.downloads.pdf, title: "Original PDF" },
-  { file: data.downloads.notes, title: "Reading notes" },
+  { file: data.downloads.pdf, title: labels.original },
+  { file: data.downloads.notes, title: labels.notes },
 ];
 ---
 
-<article class="presentation-page">
-  <nav class="paper-breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Photoacoustic Imaging</a><span>/</span><a href={`/photoacoustic/${category.path}/`}>{category.title}</a><span>/</span><span aria-current="page">{data.authors[0].split(" ").at(-1)} et al., {data.year}</span></nav>
+<article class="presentation-page" lang={presentation.language}>
+  <nav class="paper-breadcrumbs" aria-label="Breadcrumb" lang="en"><a href="/photoacoustic/">Photoacoustic Imaging</a><span>/</span><a href={`/photoacoustic/${category.path}/`}>{category.title}</a><span>/</span><span aria-current="page">{data.authors[0].split(" ").at(-1)} et al., {data.year}</span></nav>
   <header class="paper-heading">
     <div><p>{data.journal} <span>·</span> {data.year}</p><h1>{presentation.title}</h1></div>
-    <div class="paper-downloads" aria-label="Source downloads">{downloads.map(({ file, title }) => file && <a class="subtle-btn" href={file.url} download={file.label}>{title} <span aria-hidden="true">↓</span><small>{file.size}</small></a>)}</div>
+    <div class="paper-downloads" aria-label={labels.downloads}>{downloads.map(({ file, title }) => file && <a class="subtle-btn" href={file.url} download={file.label}>{title} <span aria-hidden="true">↓</span><small>{file.size}</small></a>)}</div>
   </header>
 
-  <section class="paper-deck" data-paper-deck aria-label="Paper presentation" tabindex="-1">
+  <section class="paper-deck" data-paper-deck lang={presentation.language} aria-label={labels.presentation} tabindex="-1">
     <div class="deck-toolbar" data-deck-controls hidden>
-      <label class="slide-picker"><span class="sr-only">Choose a slide</span><select data-slide-picker>{presentation.slides.map((slide, index) => <option value={slide.id}>{String(index + 1).padStart(2, "0")} / {slide.title}</option>)}</select></label>
-      <div class="deck-actions"><button class="subtle-btn" data-reading-toggle aria-pressed="false">Read all</button><button class="subtle-btn" data-present-toggle aria-pressed="false">Fullscreen</button></div>
+      <label class="slide-picker"><span class="sr-only">{labels.choose}</span><select data-slide-picker>{presentation.slides.map((slide, index) => <option value={slide.id}>{String(index + 1).padStart(2, "0")} / {slide.title}</option>)}</select></label>
+      <div class="deck-actions"><button class="subtle-btn" data-reading-toggle aria-pressed="false">{labels.readAll}</button><button class="subtle-btn" data-present-toggle aria-pressed="false">{labels.fullscreen}</button></div>
     </div>
     <div class="deck-stage">
       {presentation.slides.map((slide, index) => <section class:list={["paper-slide", `layout-${slide.layout}`]} id={`slide-${slide.id}`} data-slide={slide.id} aria-labelledby={`heading-${slide.id}`}>
@@ -31,7 +33,7 @@ const downloads = [
           <div class="slide-composition">
             <div class="slide-copy">
               {slide.lead && <p class="slide-lead">{slide.lead}</p>}
-              {slide.layout === "cover" && <div class="cover-publication"><p>{data.title}</p><p>{data.journal} ({data.year})</p><p>{data.authors.join(", ")}</p>{data.doi && <a href={`https://doi.org/${data.doi}`} target="_blank" rel="noopener noreferrer">DOI {data.doi} ↗</a>}</div>}
+              {slide.layout === "cover" && <div class="cover-publication" lang="en"><p>{data.title}</p><p>{data.journal} ({data.year})</p><p>{data.authors.join(", ")}</p>{data.doi && <a href={`https://doi.org/${data.doi}`} target="_blank" rel="noopener noreferrer">DOI {data.doi} ↗</a>}</div>}
               {slide.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
               {slide.points.length > 0 && <dl class="slide-points">{slide.points.map((point) => <div><dt>{point.label}</dt><dd>{point.text}</dd></div>)}</dl>}
               {slide.metrics.length > 0 && <dl class="slide-metrics">{slide.metrics.map((metric) => <div><dt>{metric.value}</dt><dd>{metric.label}</dd></div>)}</dl>}
@@ -42,10 +44,10 @@ const downloads = [
             </div>
             {slide.figureIds.length > 0 && <div class:list={["slide-figures", { "figure-pair": slide.figureIds.length > 1 }]}>{slide.figureIds.map((id) => {
               const figure = data.figures.find((item) => item.id === id)!;
-              return <figure><a href={figure.src} target="_blank" rel="noopener noreferrer" aria-label={`Open full-size image: ${figure.alt}`}><img src={figure.src} alt={figure.alt} width={figure.width} height={figure.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" /></a><figcaption><span>{figure.caption}</span><small>{figure.attribution}</small></figcaption></figure>;
+              return <figure><a href={figure.src} target="_blank" rel="noopener noreferrer" aria-label={`${labels.fullImage}: ${figure.alt}`}><img src={figure.src} alt={figure.alt} width={figure.width} height={figure.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" /></a><figcaption><span>{figure.caption}</span><small>{figure.attribution}</small></figcaption></figure>;
             })}</div>}
           </div>
-          {slide.flow.length > 0 && <ol class="science-flow" aria-label="Method steps">{slide.flow.map((step, stepIndex) => <li><span class="flow-number">{String(stepIndex + 1).padStart(2, "0")}</span><strong>{step.label}</strong><p>{step.text}</p>{stepIndex < slide.flow.length - 1 && <span class="flow-direction" aria-hidden="true">→</span>}</li>)}</ol>}
+          {slide.flow.length > 0 && <ol class="science-flow" aria-label={labels.steps}>{slide.flow.map((step, stepIndex) => <li><span class="flow-number">{String(stepIndex + 1).padStart(2, "0")}</span><strong>{step.label}</strong><p>{step.text}</p>{stepIndex < slide.flow.length - 1 && <span class="flow-direction" aria-hidden="true">→</span>}</li>)}</ol>}
           {slide.relation && <p class="slide-relation">{slide.relation}</p>}
           {slide.takeaway && <p class="slide-takeaway">{slide.takeaway}</p>}
           {slide.sources.length > 0 && <div class="slide-sources">{slide.sources.map((source) => <a href={source.url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>)}</div>}
@@ -53,15 +55,21 @@ const downloads = [
         <footer class="slide-footnote"><span>{slide.sourcePage && data.downloads.pdf ? <a href={`${data.downloads.pdf.url}#page=${slide.sourcePage}`} target="_blank" rel="noopener noreferrer">{slide.sourceNote}</a> : slide.sourceNote}</span><span>{String(index + 1).padStart(2, "0")}</span></footer>
       </section>)}
     </div>
-    <div class="deck-bottom" data-deck-controls hidden><p class="keyboard-hint">Use ← → to navigate</p><div class="deck-pagination"><button class="subtle-btn" data-slide-prev aria-label="Previous slide">← <span>Previous</span></button><span class="slide-count" data-slide-count role="status" aria-live="polite" aria-atomic="true">1 / {presentation.slides.length}</span><button class="filled-btn" data-slide-next aria-label="Next slide"><span>Next</span> →</button></div></div>
+    <div class="deck-bottom" data-deck-controls hidden><p class="keyboard-hint">{labels.keyboard}</p><div class="deck-pagination"><button class="subtle-btn" data-slide-prev aria-label={labels.previousLabel}>← <span>{labels.previous}</span></button><span class="slide-count" data-slide-count role="status" aria-live="polite" aria-atomic="true">1 / {presentation.slides.length}</span><button class="filled-btn" data-slide-next aria-label={labels.nextLabel}><span>{labels.next}</span> →</button></div></div>
     <p class="sr-only" data-deck-message role="status"></p>
   </section>
-  <p class="report-return"><a href={`/photoacoustic/${category.path}/`}>← Back to {category.title}</a><span>{presentation.slides.length} slides</span></p>
+  <p class="report-return"><a href={`/photoacoustic/${category.path}/`}>← {labels.back} {category.title}</a><span>{presentation.slides.length} {labels.slides}</span></p>
 </article>
 
 <script src="../scripts/paper-presentation.ts"></script>
 
 <style>
+  .presentation-page:lang(zh-CN){--sans:Inter,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;--serif:'Source Serif 4 Variable','Source Serif Pro','Noto Serif SC','Songti SC',SimSun,serif;font-family:var(--sans)}
+  .presentation-page:lang(zh-CN) .paper-heading h1,.paper-deck:lang(zh-CN) .slide-heading h2{letter-spacing:0;line-height:1.35}
+  .paper-deck:lang(zh-CN) .slide-points dd,.paper-deck:lang(zh-CN) .slide-copy>p,.paper-deck:lang(zh-CN) .slide-takeaway{line-height:1.8}
+  .paper-deck:lang(zh-CN) .slide-relation{letter-spacing:0}
+  .paper-deck:lang(zh-CN) .slide-takeaway,.paper-deck:lang(zh-CN) .slide-relation{font-style:normal}
+
   /* Slide motion: the incoming slide enters from the direction of travel, then its parts settle in sequence. */
   @keyframes slide-forward{from{opacity:0;transform:translateX(28px)}}
   @keyframes slide-back{from{opacity:0;transform:translateX(-28px)}}

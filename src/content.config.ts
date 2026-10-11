@@ -95,6 +95,7 @@ const papers = defineCollection({
     references: z.array(source).default([]),
     presentation: z.object({
       title: z.string().min(1),
+      language: z.enum(["en", "zh-CN"]).default("en"),
       slides: z.array(slide).min(1).max(40),
     }).optional(),
   }).superRefine((data, context) => {

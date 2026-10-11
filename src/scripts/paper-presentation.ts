@@ -1,6 +1,9 @@
+import { presentationLabels } from "../lib/presentation-labels";
+
 const deck = document.querySelector<HTMLElement>("[data-paper-deck]");
 
 if (deck) {
+  const labels = presentationLabels(deck.lang);
   const slides = [...deck.querySelectorAll<HTMLElement>("[data-slide]")];
   const picker = deck.querySelector<HTMLSelectElement>("[data-slide-picker]")!;
   const previous = deck.querySelector<HTMLButtonElement>("[data-slide-prev]")!;
@@ -23,7 +26,7 @@ if (deck) {
     next.disabled = current === slides.length - 1;
     count.textContent = `${current + 1} / ${slides.length}`;
     deck!.style.setProperty("--deck-progress", String((current + 1) / slides.length));
-    reading.textContent = readAll ? "Present" : "Read all";
+    reading.textContent = readAll ? labels.present : labels.readAll;
     reading.setAttribute("aria-pressed", String(readAll));
     if (updateHash) window.history.replaceState(null, "", `#${slides[current].id}`);
   }
@@ -58,7 +61,7 @@ if (deck) {
   });
   function fullscreenState() {
     const active = document.fullscreenElement === deck || deck!.dataset.expanded === "true";
-    present.textContent = active ? "Exit fullscreen" : "Fullscreen";
+    present.textContent = active ? labels.exitFullscreen : labels.fullscreen;
     present.setAttribute("aria-pressed", String(active));
   }
   function collapse() {
@@ -78,7 +81,7 @@ if (deck) {
       restoreOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       deck.dataset.expanded = "true";
-      message.textContent = "Expanded presentation. Press Escape to exit.";
+      message.textContent = labels.expanded;
       fullscreenState();
     }
     deck.focus({ preventScroll: true });
