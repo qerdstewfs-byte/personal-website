@@ -33,7 +33,7 @@ const category = researchCategories.find((item) => item.path === activePath);
   {paper ? (paper.data.presentation ? <PaperPresentation paper={paper} /> : <PaperReport paper={paper} />) : (
     <div class="category-page">
       <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Photoacoustic Imaging</a><span aria-hidden="true">/</span>{category && <><a href={`/photoacoustic/${category.groupSlug}/`}>{category.groupTitle}</a><span aria-hidden="true">/</span></>}<span aria-current="page">{title}</span></nav>
-      <header class="page-heading"><h1>{title}</h1></header>
+      <header class="page-heading"><div><p class="eyebrow">{category ? category.groupTitle : "Collection"}</p><h1>{title}</h1>{description && <p class="lede">{description}</p>}</div></header>
       <LibraryExplorer mode="papers" papers={papers} activePath={activePath} heading="Papers" />
     </div>
   )}
@@ -44,6 +44,7 @@ const category = researchCategories.find((item) => item.path === activePath);
   .category-page{padding:24px 0 0;overflow-wrap:anywhere}
   .breadcrumbs{display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:13px;line-height:1.7;color:var(--dim)}
   .breadcrumbs a:hover{color:var(--primary)}
-  .page-heading{padding:20px 0 26px}
+  .breadcrumbs [aria-current]{color:var(--muted)}
+  .page-heading{padding:22px 0 30px}
   @media(max-width:760px){.category-page{padding-top:20px}.breadcrumbs{font-size:12px;gap:7px}.page-heading{padding:18px 0 22px}}
 </style>

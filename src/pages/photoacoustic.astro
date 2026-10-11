@@ -7,7 +7,7 @@ const papers = await publishedPapers();
 ---
 <Layout title="Photoacoustic Imaging | Ray_Lee’s Research Journal" description="Photoacoustic imaging papers and research notes.">
   <div class="library-page">
-    <header class="page-heading"><h1>Photoacoustic Imaging</h1><span class="page-count">{researchCategories.length} categories</span></header>
+    <header class="page-heading"><div><p class="eyebrow">Paper library</p><h1>Photoacoustic Imaging</h1><p class="lede">Annotated readings on photoacoustic systems and fundamentals, with illustrated reports built from the original sources.</p></div><span class="page-count">{researchCategories.length} categories</span></header>
     <LibraryExplorer mode="papers" papers={papers} />
   </div>
 </Layout>

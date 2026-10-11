@@ -5,7 +5,7 @@ const themeButton = document.querySelector<HTMLButtonElement>('#themeBtn');
 function themeIcon() {
   const label = document.documentElement.dataset.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
   if (themeButton) { themeButton.title = label; themeButton.setAttribute('aria-label', label); }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#ffffff' : '#101216');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#f7f5f0' : '#0f1115');
 }
 themeIcon();
 themeButton?.addEventListener('click', () => {
