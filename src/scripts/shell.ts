@@ -10,7 +10,9 @@ function themeIcon() {
 themeIcon();
 themeButton?.addEventListener('click', () => {
   const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-  document.documentElement.dataset.theme = theme; themeIcon();
+  const apply = () => { document.documentElement.dataset.theme = theme; themeIcon(); };
+  // Cross-fade the whole page between themes where the View Transitions API exists.
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(apply); else apply();
   try { localStorage.setItem('ray-journal-theme', theme); } catch {}
 });
 const fullscreenButton = document.querySelector<HTMLButtonElement>('#fullscreenBtn');

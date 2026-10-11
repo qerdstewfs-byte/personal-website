@@ -11,19 +11,19 @@ import { DEFAULT_TASKS } from '../lib/journal';
   <div class="daily-layout">
     <div class="daily-main">
     <section class="task-card" aria-labelledby="boardTitle">
-      <div class="section-top"><h2 id="boardTitle">Checklist</h2><button id="editTasks" type="button" class="subtle-btn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Zm-3 3 5 5"/></svg>Edit tasks</button></div>
+      <div class="section-top"><h2 id="boardTitle"><span class="sec-no" aria-hidden="true">§01</span>Checklist</h2><button id="editTasks" type="button" class="subtle-btn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Zm-3 3 5 5"/></svg>Edit tasks</button></div>
       <div id="taskList" class="list" aria-busy="true">{DEFAULT_TASKS.map((task) => (<button type="button" class="task" disabled><span class="checkbox" aria-hidden="true"></span><span class="task-words"><span class="task-title">{task.title}</span><span class="task-detail">{task.detail}</span></span></button>))}</div>
       <div class="board-bottom"><p id="footerStatus" role="status">Loading…</p><button class="text-btn" id="retryChecks" type="button" hidden>Retry saving</button><button type="button" id="resetDay" class="text-btn" disabled>Reset checkmarks</button></div>
     </section>
-    <section class="notes"><div class="notes-heading"><label for="dayNote">Daily notes</label></div><textarea id="dayNote" maxlength="10000" rows="5" placeholder="Write a note…" disabled></textarea><div class="note-foot"><p id="saveHint" class="save-hint" role="status"></p><button id="retryNote" class="text-btn" type="button" hidden>Retry saving</button></div></section>
+    <section class="notes"><div class="notes-heading"><label for="dayNote"><span class="sec-no" aria-hidden="true">§02</span>Daily notes</label></div><textarea id="dayNote" maxlength="10000" rows="5" placeholder="Write a note…" disabled></textarea><div class="note-foot"><p id="saveHint" class="save-hint" role="status"></p><button id="retryNote" class="text-btn" type="button" hidden>Retry saving</button></div></section>
     </div>
     <aside class="daily-side" aria-label="Progress overview">
-      <section class="progress-card" aria-labelledby="progressLabel"><h2 class="card-label" id="progressLabel">Progress</h2><div class="progress-wrap"><div class="ring" id="progressRing" role="img" aria-label="0 percent completed"><div class="ring-inner"><div class="percent" id="percent">0%</div></div></div><div class="progress-side"><strong id="doneCount">0 / {DEFAULT_TASKS.length}</strong><p>Tasks completed</p></div></div></section>
-      <section class="weekly" aria-labelledby="weeklyTitle"><div class="weekly-head"><h2 id="weeklyTitle">Last 7 days</h2><span>Completion</span></div><div class="week-bars" id="weekBars"></div></section>
+      <section class="progress-card" aria-labelledby="progressLabel"><h2 class="card-label" id="progressLabel"><span class="fig-no" aria-hidden="true">Fig. 1</span>Progress</h2><div class="progress-wrap"><div class="ring" id="progressRing" role="img" aria-label="0 percent completed"><div class="ring-inner"><div class="percent" id="percent">0%</div></div></div><div class="progress-side"><strong id="doneCount">0 / {DEFAULT_TASKS.length}</strong><p>Tasks completed</p></div></div></section>
+      <section class="weekly" aria-labelledby="weeklyTitle"><div class="weekly-head"><h2 id="weeklyTitle"><span class="fig-no" aria-hidden="true">Fig. 2</span>Last 7 days</h2><span>Completion</span></div><div class="week-bars" id="weekBars"></div></section>
     </aside>
   </div>
   <section class="year-calendar" id="yearCalendar" aria-labelledby="calendarTitle">
-    <div class="calendar-top"><h2 id="calendarTitle">Calendar</h2><div class="year-switcher" aria-label="Choose calendar year"><button id="previousYear" class="icon-btn" type="button" aria-label="Previous year">←</button><strong id="calendarYear">—</strong><button id="nextYear" class="icon-btn" type="button" aria-label="Next year">→</button></div></div>
+    <div class="calendar-top"><h2 id="calendarTitle"><span class="sec-no" aria-hidden="true">§03</span>Calendar</h2><div class="year-switcher" aria-label="Choose calendar year"><button id="previousYear" class="icon-btn" type="button" aria-label="Previous year">←</button><strong id="calendarYear">—</strong><button id="nextYear" class="icon-btn" type="button" aria-label="Next year">→</button></div></div>
     <div class="year-summary" id="yearSummary" aria-live="polite"><span>No recorded days yet.</span></div>
     <div class="calendar-legend" aria-label="Calendar color legend"><span><i class="legend-color no-record"></i>No record</span><span><i class="legend-color progress-zero"></i>Recorded</span><span><i class="legend-color progress-partial"></i>In progress</span><span><i class="legend-color progress-full"></i>Complete</span><span><i class="legend-color today-mark"></i>Today</span></div>
     <div class="month-grid" id="yearMonths" aria-busy="true"></div>
@@ -36,7 +36,15 @@ import { DEFAULT_TASKS } from '../lib/journal';
 </div>
 <script>import '../scripts/checklist';</script>
 <style>
+  @property --p { syntax:'<percentage>'; inherits:false; initial-value:0%; }
   .journal-heading { align-items:flex-end; }
+  .fig-no { margin-right:8px; color:var(--primary); font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.04em; text-transform:none; }
+  .daily-layout,.year-calendar { animation:rise .65s var(--ease-out) both; }
+  .daily-side { animation:rise .65s var(--ease-out) .08s both; }
+  .daily-board :global(.group) { animation:rise .5s var(--ease-out) both; }
+  .daily-board :global(.group:nth-child(2)) { animation-delay:60ms; }
+  .daily-board :global(.group:nth-child(3)) { animation-delay:120ms; }
+  .daily-board :global(.group:nth-child(n+4)) { animation-delay:180ms; }
   .selected-date { margin:12px 0 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap; color:var(--muted); font-family:var(--serif); font-size:19px; line-height:1.5; }
   .date-badge { padding:2px 8px; background:var(--primary-soft); color:var(--primary); font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; border-radius:4px; }
   .page-actions { display:flex; align-items:center; gap:8px; }
@@ -56,20 +64,21 @@ import { DEFAULT_TASKS } from '../lib/journal';
   .daily-board :global(.group-head) { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 2px; padding:6px 0 8px; border-bottom:1px solid var(--line-strong); color:var(--primary); font-size:11.5px; font-weight:650; letter-spacing:.12em; text-transform:uppercase; }
   .daily-board :global(.group-name) { display:flex; align-items:center; gap:9px; min-width:0; }
   .daily-board :global(.group-dot) { width:6px; height:6px; flex-shrink:0; border-radius:1px; background:currentColor; }
-  .daily-board :global(.group-count) { color:var(--dim); font-size:12px; font-weight:500; letter-spacing:.04em; font-variant-numeric:tabular-nums; }
+  .daily-board :global(.group-count) { color:var(--dim); font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:0; font-variant-numeric:tabular-nums; }
   .daily-board :global(.task) { display:flex; align-items:center; gap:14px; width:100%; min-height:62px; padding:13px 0; margin:0; text-align:left; color:var(--text); border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; transition:background .15s; }
   .daily-board :global(.task:last-child) { border-bottom:0; }
   .daily-board :global(.task:hover:not(:disabled)) { background:linear-gradient(90deg,var(--surface-2),transparent 85%); }
   .daily-board :global(.task:disabled) { cursor:default; opacity:1; }
   .daily-board :global(.task:focus-visible) { outline-offset:3px; }
   .daily-board :global(.checkbox) { display:grid; place-items:center; flex:0 0 20px; width:20px; height:20px; border:1.5px solid var(--dim); border-radius:4px; color:var(--surface); font-size:14px; line-height:1; transition:background .15s,border-color .15s; }
-  .daily-board :global(.task.checked .checkbox) { background:var(--primary); border-color:var(--primary); }
+  .daily-board :global(.task.checked .checkbox) { background:var(--primary); border-color:var(--primary); animation:pop .32s var(--ease-out); }
+  .daily-board :global(.task-title) { transition:color .25s; }
   .daily-board :global(.task-words) { flex:1; min-width:0; }
   .daily-board :global(.task-title) { display:block; font-size:16.5px; font-weight:550; line-height:1.5; overflow-wrap:anywhere; letter-spacing:-.01em; }
   .daily-board :global(.task-detail) { display:block; margin-top:1px; color:var(--muted); font-family:var(--serif); font-size:16.5px; line-height:1.55; overflow-wrap:anywhere; }
   .daily-board :global(.task-detail:empty) { display:none; }
   .daily-board :global(.task.checked .task-title) { color:var(--dim); text-decoration:line-through; text-decoration-thickness:1px; }
-  .daily-board :global(.task-index) { color:var(--dim); font-family:var(--serif); font-style:italic; font-size:14px; font-variant-numeric:tabular-nums; }
+  .daily-board :global(.task-index) { color:var(--dim); font-family:var(--mono); font-size:11px; font-variant-numeric:tabular-nums; }
   .board-bottom { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 12px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
   .board-bottom p { flex:1; margin:0; color:var(--dim); font-size:13px; line-height:1.6; }
   .board-bottom p[data-error="true"] { color:var(--orange); }
@@ -79,12 +88,12 @@ import { DEFAULT_TASKS } from '../lib/journal';
   .progress-card,.weekly { padding:22px 24px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
   .card-label,.weekly-head h2 { margin:0; font-family:var(--sans); color:var(--dim); font-size:11.5px; line-height:1.5; font-weight:650; letter-spacing:.12em; text-transform:uppercase; }
   .progress-wrap { display:flex; align-items:center; gap:22px; margin-top:20px; }
-  .ring { display:grid; place-items:center; flex:0 0 96px; width:96px; height:96px; border-radius:50%; background:conic-gradient(var(--primary) var(--p,0%),var(--surface-3) 0%); }
+  .ring { display:grid; place-items:center; flex:0 0 96px; width:96px; height:96px; border-radius:50%; background:conic-gradient(var(--primary) var(--p),var(--surface-3) 0%); transition:--p .9s var(--ease-out); }
   .ring-inner { display:grid; place-items:center; width:84px; height:84px; border-radius:50%; background:var(--surface); }
   .percent { font-family:var(--serif); font-size:27px; font-weight:500; font-variant-numeric:tabular-nums lining-nums; line-height:1.2; }
   .progress-side { min-width:0; }
   .progress-side strong { font-family:var(--serif); font-size:28px; font-weight:500; font-variant-numeric:tabular-nums lining-nums; }
-  .progress-side p { margin:2px 0 0; color:var(--dim); font-size:13px; line-height:1.6; }
+  .progress-side p { margin:2px 0 0; color:var(--dim); font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; line-height:1.6; }
   .weekly-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .weekly-head span { color:var(--dim); font-family:var(--serif); font-style:italic; font-size:14px; }
   .week-bars { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-top:20px; }
@@ -92,8 +101,10 @@ import { DEFAULT_TASKS } from '../lib/journal';
   .daily-board :global(.week-item:hover) { background:var(--surface-2); }
   .daily-board :global(.week-item[aria-current="date"]) { color:var(--primary); font-weight:650; }
   .daily-board :global(.bar-value) { font-size:11px; font-variant-numeric:tabular-nums; }
-  .daily-board :global(.bar-track) { display:flex; align-items:flex-end; overflow:hidden; height:76px; width:16px; max-width:100%; border-radius:2px; background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line); }
-  .daily-board :global(.bar-fill) { width:100%; border-radius:1px; background:var(--primary); }
+  .daily-board :global(.bar-value) { font-family:var(--mono); font-size:10px; letter-spacing:-.02em; }
+  /* Gridlines at 25 / 50 / 75 % make the bars read as a chart. */
+  .daily-board :global(.bar-track) { display:flex; align-items:flex-end; overflow:hidden; height:76px; width:16px; max-width:100%; border-radius:2px; background:repeating-linear-gradient(to top,transparent 0 calc(25% - 1px),var(--line) calc(25% - 1px) 25%),var(--surface-2); box-shadow:inset 0 0 0 1px var(--line); }
+  .daily-board :global(.bar-fill) { width:100%; border-radius:1px; background:var(--primary); transition:height .7s var(--ease-out); }
   .notes { margin-top:30px; }
   .notes-heading { margin-bottom:12px; }
   .notes label { font-family:var(--serif); font-size:25px; font-weight:600; }
@@ -109,10 +120,10 @@ import { DEFAULT_TASKS } from '../lib/journal';
   .year-switcher { display:flex; align-items:center; gap:10px; }
   .year-switcher strong { min-width:58px; text-align:center; font-family:var(--serif); font-size:23px; font-weight:500; font-variant-numeric:tabular-nums lining-nums; }
   .year-switcher .icon-btn { min-height:36px; width:36px; border-color:var(--line); font-size:16px; }
-  .year-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:22px 0 22px; color:var(--dim); font-size:13px; border-block:1px solid var(--line); }
+  .year-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:22px 0 22px; color:var(--dim); font-family:var(--mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; border-block:1px solid var(--line); }
   .daily-board :global(.year-summary>span) { display:flex; flex-direction:column; gap:2px; padding:16px 22px; border-left:1px solid var(--line); }
   .daily-board :global(.year-summary>span:first-child) { border-left:0; padding-left:0; }
-  .daily-board :global(.year-summary strong) { color:var(--text); font-family:var(--serif); font-size:34px; font-weight:500; line-height:1.15; font-variant-numeric:tabular-nums lining-nums; }
+  .daily-board :global(.year-summary strong) { color:var(--text); text-transform:none; letter-spacing:0; font-family:var(--serif); font-size:34px; font-weight:500; line-height:1.15; font-variant-numeric:tabular-nums lining-nums; }
   .calendar-legend { display:flex; flex-wrap:wrap; gap:10px 20px; padding:0 0 22px; color:var(--dim); font-size:13px; }
   .calendar-legend>span { display:flex; align-items:center; gap:7px; }
   .legend-color { display:inline-block; flex-shrink:0; width:11px; height:11px; border:1px solid var(--line-strong); border-radius:2px; background:var(--surface); }
@@ -122,10 +133,18 @@ import { DEFAULT_TASKS } from '../lib/journal';
   .legend-color.today-mark { border:2px solid var(--primary); }
   .month-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
   .daily-board :global(.calendar-month) { min-width:0; padding:18px 16px 16px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); }
-  .daily-board :global(.calendar-month h3) { margin:0 0 14px; font-size:18px; font-weight:600; }
+  .month-grid { counter-reset:month; }
+  .daily-board :global(.calendar-month) { counter-increment:month; animation:rise .5s var(--ease-out) both; }
+  .daily-board :global(.calendar-month:nth-child(4n+2)) { animation-delay:40ms; }
+  .daily-board :global(.calendar-month:nth-child(4n+3)) { animation-delay:80ms; }
+  .daily-board :global(.calendar-month:nth-child(4n)) { animation-delay:120ms; }
+  .daily-board :global(.calendar-month h3) { display:flex; align-items:baseline; gap:10px; margin:0 0 14px; font-size:18px; font-weight:600; }
+  .daily-board :global(.calendar-month h3::before) { content:counter(month,decimal-leading-zero); color:var(--dim); font-family:var(--mono); font-size:11px; font-weight:500; }
+  .daily-board :global(.calendar-day) { transition:background .2s,border-color .2s,transform .15s; }
+  .daily-board :global(.calendar-day:active) { transform:scale(.92); }
   .daily-board :global(.month-weekdays),.daily-board :global(.month-days) { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
   .daily-board :global(.month-weekdays) { margin-bottom:8px; }
-  .daily-board :global(.month-weekdays span) { color:var(--dim); text-align:center; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+  .daily-board :global(.month-weekdays span) { color:var(--dim); text-align:center; font-family:var(--mono); font-size:10px; font-weight:500; text-transform:uppercase; }
   .daily-board :global(.calendar-day) { position:relative; width:100%; min-width:0; min-height:27px; aspect-ratio:1; padding:0; border:1px solid transparent; border-radius:3px; background:var(--surface-2); color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
   .daily-board :global(.calendar-day.recorded) { background:var(--surface-3); color:var(--text); }
   .daily-board :global(.calendar-day.partial) { background:var(--primary-soft); color:var(--primary); border-color:var(--primary-soft); }

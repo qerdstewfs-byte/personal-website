@@ -8,6 +8,7 @@ const entries = await publishedEnglish();
 <Layout title="English Learning | Ray_Lee’s Research Journal" description="Speaking, vocabulary, and English learning notes.">
   <div class="library-page">
     <header class="page-heading"><div><p class="eyebrow">Language notebook</p><h1>English Learning</h1><p class="lede">A speaking corpus and vocabulary collected from reading, listening, and academic writing.</p></div></header>
+    <dl class="fact-strip rise" style="--i:2"><div><dt>Entries</dt><dd>{entries.length}</dd></div><div><dt>Speaking</dt><dd>{entries.filter((entry) => entry.data.type === "speaking").length}</dd></div><div><dt>Vocabulary</dt><dd>{entries.filter((entry) => entry.data.type === "vocabulary").length}</dd></div><div><dt>Categories</dt><dd>{new Set(entries.map((entry) => entry.data.category)).size}</dd></div></dl>
     <LibraryExplorer mode="english" english={entries} />
   </div>
 </Layout>
