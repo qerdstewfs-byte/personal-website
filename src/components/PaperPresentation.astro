@@ -1,28 +1,30 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { paperCategory } from "../lib/library";
+import { presentationLabels } from "../lib/presentation-labels";
 interface Props { paper: CollectionEntry<"papers">; }
 const { paper } = Astro.props;
 const data = paper.data;
 const presentation = data.presentation!;
+const labels = presentationLabels(presentation.language);
 const category = paperCategory(data.category);
 const downloads = [
-  { file: data.downloads.pdf, title: "Original PDF" },
-  { file: data.downloads.notes, title: "Reading notes" },
+  { file: data.downloads.pdf, title: labels.original },
+  { file: data.downloads.notes, title: labels.notes },
 ];
 ---
 
-<article class="presentation-page">
-  <nav class="paper-breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Photoacoustic Imaging</a><span>/</span><a href={`/photoacoustic/${category.path}/`}>{category.title}</a><span>/</span><span aria-current="page">{data.authors[0].split(" ").at(-1)} et al., {data.year}</span></nav>
+<article class="presentation-page" lang={presentation.language}>
+  <nav class="paper-breadcrumbs" aria-label="Breadcrumb" lang="en"><a href="/photoacoustic/">Photoacoustic Imaging</a><span>/</span><a href={`/photoacoustic/${category.path}/`}>{category.title}</a><span>/</span><span aria-current="page">{data.authors[0].split(" ").at(-1)} et al., {data.year}</span></nav>
   <header class="paper-heading">
     <div><p>{data.journal} <span>·</span> {data.year}</p><h1>{presentation.title}</h1></div>
-    <div class="paper-downloads" aria-label="Source downloads">{downloads.map(({ file, title }) => file && <a class="subtle-btn" href={file.url} download={file.label}>{title} <span aria-hidden="true">↓</span><small>{file.size}</small></a>)}</div>
+    <div class="paper-downloads" aria-label={labels.downloads}>{downloads.map(({ file, title }) => file && <a class="subtle-btn" href={file.url} download={file.label}>{title} <span aria-hidden="true">↓</span><small>{file.size}</small></a>)}</div>
   </header>
 
-  <section class="paper-deck" data-paper-deck aria-label="Paper presentation" tabindex="-1">
+  <section class="paper-deck" data-paper-deck lang={presentation.language} aria-label={labels.presentation} tabindex="-1">
     <div class="deck-toolbar" data-deck-controls hidden>
-      <label class="slide-picker"><span class="sr-only">Choose a slide</span><select data-slide-picker>{presentation.slides.map((slide, index) => <option value={slide.id}>{String(index + 1).padStart(2, "0")} / {slide.title}</option>)}</select></label>
-      <div class="deck-actions"><button class="subtle-btn" data-reading-toggle aria-pressed="false">Read all</button><button class="subtle-btn" data-present-toggle aria-pressed="false">Fullscreen</button></div>
+      <label class="slide-picker"><span class="sr-only">{labels.choose}</span><select data-slide-picker>{presentation.slides.map((slide, index) => <option value={slide.id}>{String(index + 1).padStart(2, "0")} / {slide.title}</option>)}</select></label>
+      <div class="deck-actions"><button class="subtle-btn" data-reading-toggle aria-pressed="false">{labels.readAll}</button><button class="subtle-btn" data-present-toggle aria-pressed="false">{labels.fullscreen}</button></div>
     </div>
     <div class="deck-stage">
       {presentation.slides.map((slide, index) => <section class:list={["paper-slide", `layout-${slide.layout}`]} id={`slide-${slide.id}`} data-slide={slide.id} aria-labelledby={`heading-${slide.id}`}>
@@ -31,7 +33,7 @@ const downloads = [
           <div class="slide-composition">
             <div class="slide-copy">
               {slide.lead && <p class="slide-lead">{slide.lead}</p>}
-              {slide.layout === "cover" && <div class="cover-publication"><p>{data.title}</p><p>{data.journal} ({data.year})</p><p>{data.authors.join(", ")}</p>{data.doi && <a href={`https://doi.org/${data.doi}`} target="_blank" rel="noopener noreferrer">DOI {data.doi} ↗</a>}</div>}
+              {slide.layout === "cover" && <div class="cover-publication" lang="en"><p>{data.title}</p><p>{data.journal} ({data.year})</p><p>{data.authors.join(", ")}</p>{data.doi && <a href={`https://doi.org/${data.doi}`} target="_blank" rel="noopener noreferrer">DOI {data.doi} ↗</a>}</div>}
               {slide.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
               {slide.points.length > 0 && <dl class="slide-points">{slide.points.map((point) => <div><dt>{point.label}</dt><dd>{point.text}</dd></div>)}</dl>}
               {slide.metrics.length > 0 && <dl class="slide-metrics">{slide.metrics.map((metric) => <div><dt>{metric.value}</dt><dd>{metric.label}</dd></div>)}</dl>}
@@ -42,10 +44,10 @@ const downloads = [
             </div>
             {slide.figureIds.length > 0 && <div class:list={["slide-figures", { "figure-pair": slide.figureIds.length > 1 }]}>{slide.figureIds.map((id) => {
               const figure = data.figures.find((item) => item.id === id)!;
-              return <figure><a href={figure.src} target="_blank" rel="noopener noreferrer" aria-label={`Open full-size image: ${figure.alt}`}><img src={figure.src} alt={figure.alt} width={figure.width} height={figure.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" /></a><figcaption><span>{figure.caption}</span><small>{figure.attribution}</small></figcaption></figure>;
+              return <figure><a href={figure.src} target="_blank" rel="noopener noreferrer" aria-label={`${labels.fullImage}: ${figure.alt}`}><img src={figure.src} alt={figure.alt} width={figure.width} height={figure.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" /></a><figcaption><span>{figure.caption}</span><small>{figure.attribution}</small></figcaption></figure>;
             })}</div>}
           </div>
-          {slide.flow.length > 0 && <ol class="science-flow" aria-label="Method steps">{slide.flow.map((step, stepIndex) => <li><span class="flow-number">{String(stepIndex + 1).padStart(2, "0")}</span><strong>{step.label}</strong><p>{step.text}</p>{stepIndex < slide.flow.length - 1 && <span class="flow-direction" aria-hidden="true">→</span>}</li>)}</ol>}
+          {slide.flow.length > 0 && <ol class="science-flow" aria-label={labels.steps}>{slide.flow.map((step, stepIndex) => <li><span class="flow-number">{String(stepIndex + 1).padStart(2, "0")}</span><strong>{step.label}</strong><p>{step.text}</p>{stepIndex < slide.flow.length - 1 && <span class="flow-direction" aria-hidden="true">→</span>}</li>)}</ol>}
           {slide.relation && <p class="slide-relation">{slide.relation}</p>}
           {slide.takeaway && <p class="slide-takeaway">{slide.takeaway}</p>}
           {slide.sources.length > 0 && <div class="slide-sources">{slide.sources.map((source) => <a href={source.url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>)}</div>}
@@ -53,15 +55,19 @@ const downloads = [
         <footer class="slide-footnote"><span>{slide.sourcePage && data.downloads.pdf ? <a href={`${data.downloads.pdf.url}#page=${slide.sourcePage}`} target="_blank" rel="noopener noreferrer">{slide.sourceNote}</a> : slide.sourceNote}</span><span>{String(index + 1).padStart(2, "0")}</span></footer>
       </section>)}
     </div>
-    <div class="deck-bottom" data-deck-controls hidden><p class="keyboard-hint">Use ← → to navigate</p><div class="deck-pagination"><button class="subtle-btn" data-slide-prev aria-label="Previous slide">← <span>Previous</span></button><span class="slide-count" data-slide-count role="status" aria-live="polite" aria-atomic="true">1 / {presentation.slides.length}</span><button class="filled-btn" data-slide-next aria-label="Next slide"><span>Next</span> →</button></div></div>
+    <div class="deck-bottom" data-deck-controls hidden><p class="keyboard-hint">{labels.keyboard}</p><div class="deck-pagination"><button class="subtle-btn" data-slide-prev aria-label={labels.previousLabel}>← <span>{labels.previous}</span></button><span class="slide-count" data-slide-count role="status" aria-live="polite" aria-atomic="true">1 / {presentation.slides.length}</span><button class="filled-btn" data-slide-next aria-label={labels.nextLabel}><span>{labels.next}</span> →</button></div></div>
     <p class="sr-only" data-deck-message role="status"></p>
   </section>
-  <p class="report-return"><a href={`/photoacoustic/${category.path}/`}>← Back to {category.title}</a><span>{presentation.slides.length} slides</span></p>
+  <p class="report-return"><a href={`/photoacoustic/${category.path}/`}>← {labels.back} {category.title}</a><span>{presentation.slides.length} {labels.slides}</span></p>
 </article>
 
 <script src="../scripts/paper-presentation.ts"></script>
 
 <style>
+  .presentation-page:lang(zh-CN){font-family:Inter,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
+  .presentation-page:lang(zh-CN) .paper-heading h1,.paper-deck:lang(zh-CN) .slide-heading h2{letter-spacing:0;line-height:1.35}
+  .paper-deck:lang(zh-CN) .slide-points dd,.paper-deck:lang(zh-CN) .slide-copy>p,.paper-deck:lang(zh-CN) .slide-takeaway{line-height:1.8}
+  .paper-deck:lang(zh-CN) .slide-relation{letter-spacing:0}
   .presentation-page{padding:24px 0 10px}a{text-decoration:none}.paper-breadcrumbs{display:flex;flex-wrap:wrap;gap:9px;font-size:13px;color:var(--dim)}.paper-breadcrumbs a{color:inherit}.paper-breadcrumbs a:hover{color:var(--primary)}.paper-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:25px 0}.paper-heading p{margin:0 0 6px;font-size:14px;color:var(--dim)}.paper-heading p span{margin:0 7px}.paper-heading h1{margin:0;font-size:29px;font-weight:600;letter-spacing:-.045em}.paper-downloads{display:flex;gap:8px;flex-wrap:wrap}.paper-downloads small{font-size:11px;color:var(--dim)}
   .paper-deck{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);outline-offset:5px}.deck-toolbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface-2)}.slide-picker{min-width:0;max-width:65%;flex:1}.slide-picker select{width:100%;border:0;background:transparent;color:var(--text);font-size:14px;font-weight:550;min-height:38px;padding:0 8px;cursor:pointer;text-overflow:ellipsis}.deck-actions{display:flex;gap:6px}.deck-actions button{font-size:13px;min-height:36px;padding:7px 11px}.deck-actions button[aria-pressed="true"]{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
   .paper-slide{display:flex;flex-direction:column;min-height:660px;padding:36px 44px 18px;scroll-margin-top:20px}.paper-slide+.paper-slide{border-top:1px solid var(--line)}.paper-deck[data-mode="slides"] .paper-slide{height:690px;min-height:0;overflow-y:auto;border:0}.slide-body{flex:1}.slide-heading{margin-bottom:28px}.slide-section{font-size:12px;letter-spacing:.11em;font-weight:600;text-transform:uppercase;color:var(--primary);margin:0 0 10px}.slide-heading h2{font-size:clamp(26px,3vw,36px);line-height:1.16;letter-spacing:-.04em;font-weight:600;margin:0;max-width:940px}.slide-composition{display:grid;grid-template-columns:minmax(0,1fr);gap:32px;align-items:center}.layout-split .slide-composition{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}.layout-wide .slide-composition{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr)}.slide-copy{min-width:0}.slide-copy>p{font-size:17px;line-height:1.7;color:var(--muted);margin:0 0 18px}.slide-copy>p.slide-lead{font-size:21px;line-height:1.5;color:var(--text);letter-spacing:-.015em}.slide-points{margin:20px 0 0;display:grid;gap:19px}.slide-points>div{min-width:0}.slide-points dt{font-size:15px;font-weight:600;margin-bottom:5px;color:var(--text)}.slide-points dd{font-size:16px;line-height:1.65;color:var(--muted);margin:0}.layout-text .slide-points{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 38px}.layout-text .slide-points>div{padding-top:17px;border-top:1px solid var(--line)}.layout-text .slide-points dt{font-size:18px}.layout-text .slide-points dd{font-size:17px}.slide-metrics{display:flex;gap:22px 36px;flex-wrap:wrap;margin:24px 0 0}.slide-metrics>div{flex:1;min-width:95px}.slide-metrics dt{font-size:32px;font-weight:550;letter-spacing:-.05em;line-height:1.3;color:var(--primary)}.slide-metrics dd{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--muted);max-width:200px}
