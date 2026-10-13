@@ -17,23 +17,41 @@ test('Historical progress uses its snapshot, ignoring removed IDs', () => {
   assert.deepEqual(summary(record), {done:1,total:2,percent:50});
 });
 const day = (date, tasks, checked = {}) => ({ date, tasks, checked, note:'', revision:1, updatedAt:'' });
-test('Version 1 data adopts the 2026-10-12 checklist for every day and the default', () => {
-  const baseline = DEFAULT_TASKS.filter((task) => ['pam','ielts','jetson'].includes(task.id));
-  const state = migrateJournal({ version:1, template:DEFAULT_TASKS, records:{ '2026-10-09':day('2026-10-09', DEFAULT_TASKS, {paper:true}), '2026-10-12':day('2026-10-12', baseline, {pam:true}) } });
-  assert.equal(state.version, 2);
-  assert.deepEqual(state.template.map((task) => task.id), ['pam','ielts','jetson']);
-  for (const record of Object.values(state.records)) assert.deepEqual(record.tasks, baseline);
-  // A removed task keeps its checkmark in the record but no longer counts toward progress.
-  assert.equal(state.records['2026-10-09'].checked.paper, true);
-  assert.deepEqual(summary(state.records['2026-10-09']), {done:0,total:3,percent:0});
+const five = DEFAULT_TASKS.filter((task) => ['pam','ielts','course','vocab','jetson'].includes(task.id)).map((task) => ({ ...task, detail:'' }));
+const ids = (record) => record.tasks.map((task) => task.id);
+test('Version 1 data adopts the 2026-10-12 checklist from that day forward only', () => {
+  const state = migrateJournal({ version:1, template:DEFAULT_TASKS, records:{ '2026-10-09':day('2026-10-09', DEFAULT_TASKS), '2026-10-12':day('2026-10-12', five), '2026-10-13':day('2026-10-13', DEFAULT_TASKS) } });
+  assert.equal(state.version, 3);
+  assert.deepEqual(state.template, five);
+  assert.deepEqual(state.records['2026-10-09'].tasks, DEFAULT_TASKS);
+  assert.deepEqual(state.records['2026-10-13'].tasks, five);
   assert.equal(migrateJournal(state), state);
 });
-test('Editing the checklist changes every recorded day and restores checks on re-added tasks', () => {
-  const state = { version:2, template:DEFAULT_TASKS.slice(0, 2), records:{ '2026-10-10':day('2026-10-10', DEFAULT_TASKS.slice(0, 2), {pam:true,paper:true}), '2026-10-11':day('2026-10-11', DEFAULT_TASKS.slice(0, 2)) } };
-  applyChecklist(state, DEFAULT_TASKS.slice(0, 1));
-  assert.deepEqual(summary(state.records['2026-10-10']), {done:1,total:1,percent:100});
-  assert.deepEqual(state.records['2026-10-11'].tasks, DEFAULT_TASKS.slice(0, 1));
-  applyChecklist(state, DEFAULT_TASKS.slice(0, 2));
-  assert.deepEqual(summary(state.records['2026-10-10']), {done:2,total:2,percent:100});
-  assert.notEqual(state.records['2026-10-10'].tasks, state.records['2026-10-11'].tasks);
+test('Version 2 data gets back the past lists it overwrote, keeping checkmarks', () => {
+  const state = migrateJournal({ version:2, template:five, records:{ '2026-10-09':day('2026-10-09', five), '2026-10-10':day('2026-10-10', five, {vocab:true,'custom_21ccda7e-fb61-44ad-98cc-5fc681339acc':true}), '2026-10-11':day('2026-10-11', five), '2026-10-13':day('2026-10-13', five) } });
+  assert.deepEqual(state.records['2026-10-09'].tasks, DEFAULT_TASKS);
+  assert.equal(state.records['2026-10-10'].tasks.at(-1).title, 'Online Course');
+  assert.equal(state.records['2026-10-11'].tasks[0].detail, 'Study photoacoustic microscopy and take notes');
+  assert.deepEqual(summary(state.records['2026-10-10']), {done:2,total:6,percent:33});
+  assert.deepEqual(state.records['2026-10-13'].tasks, five);
+  assert.deepEqual(state.template, five);
+});
+test('A past day edited after the version 2 change is not overwritten by the restore', () => {
+  const edited = DEFAULT_TASKS.slice(0, 2);
+  const state = migrateJournal({ version:2, template:five, records:{ '2026-10-09':day('2026-10-09', edited) } });
+  assert.deepEqual(state.records['2026-10-09'].tasks, edited);
+});
+test('Editing a checklist changes that day and later days, never earlier ones', () => {
+  const state = { version:3, template:five, records:{ '2026-10-11':day('2026-10-11', five), '2026-10-13':day('2026-10-13', five, {pam:true}), '2026-10-14':day('2026-10-14', five) } };
+  applyChecklist(state, DEFAULT_TASKS, '2026-10-13');
+  assert.deepEqual(state.records['2026-10-11'].tasks, five);
+  assert.deepEqual(ids(state.records['2026-10-13']), DEFAULT_TASKS.map((task) => task.id));
+  assert.deepEqual(state.records['2026-10-14'].tasks, DEFAULT_TASKS);
+  assert.deepEqual(state.template, DEFAULT_TASKS);
+  assert.notEqual(state.records['2026-10-13'].tasks, state.records['2026-10-14'].tasks);
+  // Removing a task keeps its checkmark, so adding it back restores progress.
+  applyChecklist(state, DEFAULT_TASKS.slice(1), '2026-10-13');
+  assert.deepEqual(summary(state.records['2026-10-13']), {done:0,total:6,percent:0});
+  applyChecklist(state, DEFAULT_TASKS, '2026-10-13');
+  assert.deepEqual(summary(state.records['2026-10-13']), {done:1,total:7,percent:14});
 });

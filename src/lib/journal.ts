@@ -12,21 +12,41 @@ export const DEFAULT_TASKS: Task[] = [
   { id: 'vocab', title: 'Vocabulary Review', detail: 'Learn and review new words', category: 'English' },
   { id: 'jetson', title: 'Jetson Nano', detail: 'Code, experiment, or debug your project', category: 'Development' },
 ];
-export type JournalState = { version: 1 | 2; template: Task[]; records: Record<string, DayRecord> };
-// The owner's checklist on this day seeds the shared checklist when version 1 data is migrated.
+export type JournalState = { version: 1 | 2 | 3; template: Task[]; records: Record<string, DayRecord> };
+// The owner's checklist on this day becomes the checklist for it and every later day.
 export const CHECKLIST_BASELINE_DATE = '2026-10-12';
-// Every day shares one checklist. Checkmarks of removed tasks stay in each record
-// (progress ignores them), so adding a task back restores its history.
-export function applyChecklist<T extends JournalState>(state: T, tasks: Task[]): T {
+// A checklist edit applies from the edited day forward and becomes the default for
+// unrecorded days; earlier days keep their own lists. Checkmarks of removed tasks stay
+// in each record (progress ignores them), so adding a task back restores its history.
+export function applyChecklist<T extends JournalState>(state: T, tasks: Task[], fromDate: string): T {
   state.template = structuredClone(tasks);
-  for (const record of Object.values(state.records)) record.tasks = structuredClone(tasks);
+  for (const [date, record] of Object.entries(state.records)) if (date >= fromDate) record.tasks = structuredClone(tasks);
   return state;
 }
-// Version 1 kept a separate checklist per day; version 2 shares one list across all days.
+const sameTasks = (a: Task[], b: Task[]) => JSON.stringify(a) === JSON.stringify(b);
+// Version 2 briefly applied one checklist to every day, overwriting these days' own lists.
+function originalChecklists(): Record<string, Task[]> {
+  const brief = (id: string, title: string, category: Task['category']): Task => ({ id, title, detail: '', category });
+  return {
+    '2026-10-09': structuredClone(DEFAULT_TASKS),
+    '2026-10-11': DEFAULT_TASKS.filter(task => !['paper', 'ted'].includes(task.id)).map(task => ({ ...task })),
+    '2026-10-10': [brief('pam', 'PAM Research', 'Research'), brief('ielts', 'IELTS Listening', 'English'), brief('course', 'English Course', 'English'), brief('vocab', 'Vocabulary Review', 'English'), brief('jetson', 'Jetson Nano', 'Development'), brief('custom_21ccda7e-fb61-44ad-98cc-5fc681339acc', 'Online Course', 'Development')],
+  };
+}
+// Version 1 kept an independent list per day. Version 3 applies the baseline from its day forward.
 export function migrateJournal<T extends JournalState>(state: T): T {
-  if (state.version === 2) return state;
-  applyChecklist(state, state.records[CHECKLIST_BASELINE_DATE]?.tasks ?? state.template);
-  state.version = 2;
+  if (state.version === 3) return state;
+  if (state.version === 2) {
+    // Version 2 kept every record equal to the default list, so a past record that still
+    // matches it was overwritten rather than edited; give it back its own list.
+    for (const [date, tasks] of Object.entries(originalChecklists())) {
+      const record = state.records[date];
+      if (record && sameTasks(record.tasks, state.template)) record.tasks = tasks;
+    }
+  } else {
+    applyChecklist(state, state.records[CHECKLIST_BASELINE_DATE]?.tasks ?? state.template, CHECKLIST_BASELINE_DATE);
+  }
+  state.version = 3;
   return state;
 }
 export function beijingDate(now = new Date()): string {
