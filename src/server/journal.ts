@@ -1,7 +1,7 @@
 import { CATEGORIES, DEFAULT_TASKS, applyChecklist, beijingDate, migrateJournal, validDate, type JournalState, type Task } from '../lib/journal';
 import { readJson, updateJson } from './storage';
 type JournalData = JournalState;
-function initialState(): JournalData { return { version: 2, template: structuredClone(DEFAULT_TASKS), records: {} }; }
+function initialState(): JournalData { return { version: 3, template: structuredClone(DEFAULT_TASKS), records: {} }; }
 export async function readJournal(year: number) {
   // Older stored data is migrated in memory on read and persisted by the next write.
   const data = migrateJournal((await readJson<JournalData>('state'))?.data || initialState());
@@ -28,14 +28,14 @@ export async function writeRecord(input: Record<string, unknown>) {
   const checks = action === 'checks' ? input.checks : action === 'check' ? [{taskId: input.taskId, checked: input.checked}] : [];
   if (!Array.isArray(checks) || checks.length > 40 || (action === 'checks' && !checks.length) || checks.some(item => !item || typeof item.taskId !== 'string' || typeof item.checked !== 'boolean') || new Set(checks.map(item => item.taskId)).size !== checks.length) throw new Error('Invalid checkmarks.');
   if (['note', 'tasks'].includes(String(action)) && (!Number.isInteger(input.baseRevision) || Number(input.baseRevision) < 0)) throw new Error('Invalid record revision. Reload the record before editing.');
-  // A single conditional commit keeps the shared checklist and every record that uses it consistent.
+  // A single conditional commit keeps the checklist, the default, and every later record consistent.
   const state = await updateJson<JournalData>('state', initialState, stored => {
     const previous = migrateJournal(stored);
     const existing = previous.records[date];
     if (['note', 'tasks'].includes(String(action)) && (existing?.revision ?? 0) !== input.baseRevision) throw new Error('Record changed on another device. Reload before replacing this note or checklist.');
     if (tasks) {
-      applyChecklist(previous, tasks);
-      // The checklist belongs to every day, so saving it does not create a record for the selected day.
+      applyChecklist(previous, tasks, date);
+      // The list also governs later days, so saving it does not create a record for the selected day.
       if (existing) { existing.revision += 1; existing.updatedAt = new Date().toISOString(); }
       return previous;
     }

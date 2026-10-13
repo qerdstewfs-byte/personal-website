@@ -352,8 +352,8 @@ function initJournal() {
       acknowledged?.();
       if (payload.template) {
         template = payload.template;
-        // The checklist is shared by every day, so mirror the server's change into every cached record.
-        for (const saved of Object.values(records)) saved.tasks = payload.template.map(task => ({ ...task }));
+        // Mirror the server: the edited day and every later recorded day take the new list.
+        for (const [savedDate, saved] of Object.entries(records)) if (savedDate >= date) saved.tasks = payload.template.map(task => ({ ...task }));
       }
       if (action === 'note' && payload.record && date === selectedDate) {
         noteBaseRevision = payload.record.revision;
@@ -508,7 +508,7 @@ function initJournal() {
     }
     if (!updated.length || pending) return;
     $('editorError').hidden = true;
-    void write('tasks',{tasks:updated,baseRevision:editorBaseRevision}).then(() => { editor.close(); announce('Checklist updated for every day.'); }).catch(() => { $('editorError').textContent = `${lastError} Close and reopen this editor to load the latest checklist if another device changed it.`; $('editorError').hidden = false; });
+    void write('tasks',{tasks:updated,baseRevision:editorBaseRevision}).then(() => { editor.close(); announce('Checklist updated for this day and every day after it.'); }).catch(() => { $('editorError').textContent = `${lastError} Close and reopen this editor to load the latest checklist if another device changed it.`; $('editorError').hidden = false; });
   });
   listen($('resetDay'),'click',() => {
     if (!canEdit() || pending) return;
