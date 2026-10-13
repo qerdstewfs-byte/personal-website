@@ -265,7 +265,6 @@ function initJournal() {
     $<HTMLButtonElement>('saveTasks').disabled = !canEdit() || pending > 0;
     $<HTMLButtonElement>('confirmReset').disabled = !canEdit() || pending > 0;
     editor.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input,select,button').forEach(field => { field.disabled = !canEdit() || pending > 0; });
-    $<HTMLInputElement>('applyToFuture').disabled ||= selectedDate !== today;
     for (const id of ['cancelConflict','useCloudNote','keepDraftNote','cancelReset']) $<HTMLButtonElement>(id).disabled = pending > 0;
     $('retryChecks').hidden = !checkFailed || !checkmarks.pending || !canEdit();
     $('footerStatus').textContent = checkFailed && checkmarks.pending ? 'Not saved · Retry' : busy ? 'Saving…' : lastError ? lastError : !hasLoaded() ? 'Loading…' : record() ? `Saved · ${record()!.updatedAt ? formatSavedTime(record()!.updatedAt) : selectedDate}` : 'No record yet';
@@ -340,17 +339,23 @@ function initJournal() {
       const permissionRevision = journalPermissions.revision;
       const response = await fetch('/api/journal',{method:'POST',credentials:'same-origin',keepalive:action === 'note',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,action,...extra})});
       const payload = await response.json() as {record?:DayRecord;template?:Task[];error?:string};
-      if (!response.ok || !payload.record) {
+      if (!response.ok || (!payload.record && action !== 'tasks')) {
         if (response.status === 401 || response.status === 403) journalPermissions.deny(permissionRevision);
         if (action === 'note' && response.status === 409) noteConflict = true;
         throw new Error(payload.error || 'Changes could not be saved. Please retry.');
       }
       const previous = records[date];
-      if (action !== 'note' && date === selectedDate && noteDirty && noteBaseRevision === (previous?.revision ?? 0) && payload.record.note === (previous?.note ?? '')) noteBaseRevision = payload.record.revision;
-      records[date] = payload.record;
+      if (payload.record) {
+        if (action !== 'note' && date === selectedDate && noteDirty && noteBaseRevision === (previous?.revision ?? 0) && payload.record.note === (previous?.note ?? '')) noteBaseRevision = payload.record.revision;
+        records[date] = payload.record;
+      }
       acknowledged?.();
-      if (payload.template) template = payload.template;
-      if (action === 'note' && date === selectedDate) {
+      if (payload.template) {
+        template = payload.template;
+        // The checklist is shared by every day, so mirror the server's change into every cached record.
+        for (const saved of Object.values(records)) saved.tasks = payload.template.map(task => ({ ...task }));
+      }
+      if (action === 'note' && payload.record && date === selectedDate) {
         noteBaseRevision = payload.record.revision;
         noteConflict = false;
         noteDirty = noteField.value !== payload.record.note;
@@ -358,7 +363,7 @@ function initJournal() {
         // A user may keep typing, or return to the old text, while this save is in flight.
         // Compare with the acknowledged cloud note rather than the previous local record.
         if (noteDirty) { clearTimeout(noteTimer); noteTimer = setTimeout(() => { void flushNotes(); },650); }
-      } else if (date === selectedDate && !noteDirty) {
+      } else if (payload.record && date === selectedDate && !noteDirty) {
         noteField.value = payload.record.note;
       }
       lastError = '';
@@ -366,7 +371,7 @@ function initJournal() {
       lastError = error instanceof Error ? error.message : 'Changes could not be saved. Please retry.';
       if (action === 'note' && date === selectedDate) noteFailed = true;
       throw error;
-    }).finally(() => { pending--; render(false,new Set([date])); });
+    }).finally(() => { pending--; render(false,action === 'tasks' ? undefined : new Set([date])); });
     queue = operation.catch(() => undefined);
     return operation;
   }
@@ -464,10 +469,6 @@ function initJournal() {
     if (!canEdit()) return;
     $('editRows').replaceChildren(); tasks().forEach(addEditorRow);
     editorBaseRevision = record()?.revision ?? 0;
-    $('editorDate').textContent = format(selectedDate,{month:'long',day:'numeric',year:'numeric'});
-    $<HTMLInputElement>('applyToFuture').checked = false;
-    $<HTMLInputElement>('applyToFuture').disabled = selectedDate !== today;
-    $('templateHint').textContent = selectedDate === today ? 'Existing daily records keep their own task lists.' : 'To change the default for unrecorded days, edit today’s checklist.';
     $('editorError').hidden = true;
     editor.showModal();
   }
@@ -507,7 +508,7 @@ function initJournal() {
     }
     if (!updated.length || pending) return;
     $('editorError').hidden = true;
-    void write('tasks',{tasks:updated,applyToFuture:$<HTMLInputElement>('applyToFuture').checked,baseRevision:editorBaseRevision}).then(() => { editor.close(); announce('Checklist updated. Other recorded days are unchanged.'); }).catch(() => { $('editorError').textContent = `${lastError} Close and reopen this editor to load the latest checklist if another device changed it.`; $('editorError').hidden = false; });
+    void write('tasks',{tasks:updated,baseRevision:editorBaseRevision}).then(() => { editor.close(); announce('Checklist updated for every day.'); }).catch(() => { $('editorError').textContent = `${lastError} Close and reopen this editor to load the latest checklist if another device changed it.`; $('editorError').hidden = false; });
   });
   listen($('resetDay'),'click',() => {
     if (!canEdit() || pending) return;

@@ -12,6 +12,23 @@ export const DEFAULT_TASKS: Task[] = [
   { id: 'vocab', title: 'Vocabulary Review', detail: 'Learn and review new words', category: 'English' },
   { id: 'jetson', title: 'Jetson Nano', detail: 'Code, experiment, or debug your project', category: 'Development' },
 ];
+export type JournalState = { version: 1 | 2; template: Task[]; records: Record<string, DayRecord> };
+// The owner's checklist on this day seeds the shared checklist when version 1 data is migrated.
+export const CHECKLIST_BASELINE_DATE = '2026-10-12';
+// Every day shares one checklist. Checkmarks of removed tasks stay in each record
+// (progress ignores them), so adding a task back restores its history.
+export function applyChecklist<T extends JournalState>(state: T, tasks: Task[]): T {
+  state.template = structuredClone(tasks);
+  for (const record of Object.values(state.records)) record.tasks = structuredClone(tasks);
+  return state;
+}
+// Version 1 kept a separate checklist per day; version 2 shares one list across all days.
+export function migrateJournal<T extends JournalState>(state: T): T {
+  if (state.version === 2) return state;
+  applyChecklist(state, state.records[CHECKLIST_BASELINE_DATE]?.tasks ?? state.template);
+  state.version = 2;
+  return state;
+}
 export function beijingDate(now = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
   const part = (type: string) => parts.find(p => p.type === type)?.value;
