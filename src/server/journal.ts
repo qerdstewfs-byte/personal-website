@@ -1,9 +1,10 @@
-import { CATEGORIES, DEFAULT_TASKS, beijingDate, validDate, type Task, type DayRecord } from '../lib/journal';
+import { CATEGORIES, DEFAULT_TASKS, applyChecklist, beijingDate, migrateJournal, validDate, type JournalState, type Task } from '../lib/journal';
 import { readJson, updateJson } from './storage';
-type JournalData = { version: 1; template: Task[]; records: Record<string, DayRecord> };
-function initialState(): JournalData { return { version: 1, template: structuredClone(DEFAULT_TASKS), records: {} }; }
+type JournalData = JournalState;
+function initialState(): JournalData { return { version: 2, template: structuredClone(DEFAULT_TASKS), records: {} }; }
 export async function readJournal(year: number) {
-  const data = (await readJson<JournalData>('state'))?.data || initialState();
+  // Older stored data is migrated in memory on read and persisted by the next write.
+  const data = migrateJournal((await readJson<JournalData>('state'))?.data || initialState());
   return { template: data.template, records: Object.fromEntries(Object.entries(data.records).filter(([date]) => date.startsWith(`${year}-`))) };
 }
 export function validateTasks(value: unknown): Task[] {
@@ -27,11 +28,18 @@ export async function writeRecord(input: Record<string, unknown>) {
   const checks = action === 'checks' ? input.checks : action === 'check' ? [{taskId: input.taskId, checked: input.checked}] : [];
   if (!Array.isArray(checks) || checks.length > 40 || (action === 'checks' && !checks.length) || checks.some(item => !item || typeof item.taskId !== 'string' || typeof item.checked !== 'boolean') || new Set(checks.map(item => item.taskId)).size !== checks.length) throw new Error('Invalid checkmarks.');
   if (['note', 'tasks'].includes(String(action)) && (!Number.isInteger(input.baseRevision) || Number(input.baseRevision) < 0)) throw new Error('Invalid record revision. Reload the record before editing.');
-  if (input.applyToFuture && (action !== 'tasks' || date !== beijingDate())) throw new Error('Only today’s checklist can become the future default.');
-  // A single conditional commit keeps the selected record and its future-default change atomic.
-  const state = await updateJson<JournalData>('state', initialState, previous => {
-    const record = previous.records[date] || { date, tasks: structuredClone(previous.template), checked: {}, note: '', revision: 0, updatedAt: '' };
-    if (['note', 'tasks'].includes(String(action)) && record.revision !== input.baseRevision) throw new Error('Record changed on another device. Reload before replacing this note or checklist.');
+  // A single conditional commit keeps the shared checklist and every record that uses it consistent.
+  const state = await updateJson<JournalData>('state', initialState, stored => {
+    const previous = migrateJournal(stored);
+    const existing = previous.records[date];
+    if (['note', 'tasks'].includes(String(action)) && (existing?.revision ?? 0) !== input.baseRevision) throw new Error('Record changed on another device. Reload before replacing this note or checklist.');
+    if (tasks) {
+      applyChecklist(previous, tasks);
+      // The checklist belongs to every day, so saving it does not create a record for the selected day.
+      if (existing) { existing.revision += 1; existing.updatedAt = new Date().toISOString(); }
+      return previous;
+    }
+    const record = existing || { date, tasks: structuredClone(previous.template), checked: {}, note: '', revision: 0, updatedAt: '' };
     if (action === 'check' || action === 'checks') {
       for (const item of checks) {
         if (!record.tasks.some(task => task.id === item.taskId)) throw new Error('This task is no longer on the selected checklist. Reload it first.');
@@ -39,11 +47,7 @@ export async function writeRecord(input: Record<string, unknown>) {
       }
     } else if (action === 'note') record.note = input.note as string;
     else if (action === 'reset') record.checked = {};
-    else if (tasks) {
-      record.tasks = tasks; record.checked = Object.fromEntries(tasks.map(task => [task.id, Boolean(record.checked[task.id])]));
-    }
-    if (tasks && input.applyToFuture) previous.template = tasks;
     record.revision += 1; record.updatedAt = new Date().toISOString(); previous.records[date] = record; return previous;
   });
-  return { record: state.records[date], ...(tasks && input.applyToFuture ? { template: state.template } : {}) };
+  return { record: state.records[date], ...(tasks ? { template: state.template } : {}) };
 }
