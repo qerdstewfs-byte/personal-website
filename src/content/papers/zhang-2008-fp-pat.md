@@ -4,7 +4,7 @@
   "title": "Backward-mode multiwavelength photoacoustic scanner using a planar Fabry-Perot polymer film ultrasound sensor for high-resolution three-dimensional imaging of biological tissues",
   "category": "pact",
   "status": "published",
-  "summary": "以透明 Fabry–Perot 聚合物薄膜接收超声，在组织同侧完成激发与探测；通过灵敏度、带宽、分辨率标定及三维血管仿体、多波长实验验证系统能力。",
+  "summary": "A transparent Fabry–Perot polymer-film sensor detects ultrasound from the same side as optical excitation. Sensitivity, bandwidth and resolution measurements, vascular phantoms and multiwavelength experiments characterize the system.",
   "journal": "Applied Optics",
   "year": 2008,
   "authors": [
@@ -18,7 +18,7 @@
     "Backward mode",
     "Optical ultrasound detection",
     "Multiwavelength",
-    "学习笔记"
+    "Reading notes"
   ],
   "updated": "2026-10-13",
   "downloads": {

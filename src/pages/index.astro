@@ -1,8 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import DailyBoard from '../components/DailyBoard.astro';
+import CurrentWork from '../components/CurrentWork.astro';
+import { siteFeatures } from '../lib/site-features';
 export const prerender = true;
 ---
-<Layout title="Daily Journal · Ray_Lee’s Research Journal" description="Daily research, English learning, and development records with a full-year calendar. All dates use Beijing time.">
-  <DailyBoard />
+<Layout title={`${siteFeatures.dailyJournal ? 'Daily Journal' : 'Current Work'} · Ray_Lee’s Research Journal`} description={siteFeatures.dailyJournal ? 'Daily research records and a full-year calendar in Beijing time.' : 'Current research work by Ray_Lee.'}>
+  {siteFeatures.dailyJournal ? <DailyBoard /> : <CurrentWork />}
 </Layout>

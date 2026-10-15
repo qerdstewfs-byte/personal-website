@@ -1,0 +1,14 @@
+---
+import currentWork from '../data/current-work.json';
+---
+<section class="current-work" aria-labelledby="current-work-title">
+  <header class="page-heading"><div><h1 id="current-work-title">Current Work</h1></div></header>
+  {currentWork.paragraphs.length > 0 && <div class="work-copy">{currentWork.paragraphs.map((paragraph) => <p>{paragraph}</p>)}</div>}
+</section>
+<style>
+  .current-work{padding:36px 0 72px;min-height:55vh}
+  .page-heading{padding:12px 0 28px}
+  .work-copy{max-width:780px;font-size:19px;line-height:1.8;color:var(--muted)}
+  .work-copy p{margin:0 0 24px;white-space:pre-line}
+  @media(max-width:760px){.current-work{padding:24px 0 48px}.work-copy{font-size:17px}}
+</style>
