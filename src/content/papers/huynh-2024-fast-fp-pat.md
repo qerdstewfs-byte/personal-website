@@ -4,7 +4,7 @@
   "title": "A fast all-optical 3D photoacoustic scanner for clinical vascular imaging",
   "category": "pact",
   "status": "published",
-  "summary": "以 16/64 束并行 Fabry–Perot 光学读出、高重复频率激发和欠采样缩短三维血管成像时间，并通过人体结构、动态响应及探索性临床实验检验实用性。2024 年在线发表，正式卷期为 2025 年。",
+  "summary": "Parallel 16-/64-beam Fabry–Perot readout, high-repetition-rate excitation and subsampling shorten 3D vascular imaging, with human imaging and exploratory clinical demonstrations. Published online in 2024; journal issue dated 2025.",
   "journal": "Nature Biomedical Engineering",
   "year": 2025,
   "authors": [
@@ -29,7 +29,7 @@
     "Parallel readout",
     "Clinical vascular imaging",
     "Compressed sensing",
-    "学习笔记"
+    "Reading notes"
   ],
   "updated": "2026-10-13",
   "downloads": {

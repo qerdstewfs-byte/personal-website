@@ -2,9 +2,7 @@
 import type { CollectionEntry } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import LibraryExplorer from "../../components/LibraryExplorer.astro";
-import PaperReport from "../../components/PaperReport.astro";
-import PaperPresentation from "../../components/PaperPresentation.astro";
-import { publishedPapers, paperCategory, researchCategories, researchGroups } from "../../lib/library";
+import { publishedPapers, researchCategories, researchGroups } from "../../lib/library";
 
 export const prerender = true;
 
@@ -13,30 +11,26 @@ export async function getStaticPaths() {
   return [
     ...researchGroups.map((group) => ({ params: { slug: group.slug }, props: { activePath: group.slug, title: group.title, description: group.description, papers } })),
     ...researchCategories.map((category) => ({ params: { slug: category.path }, props: { activePath: category.path, title: category.title, description: category.description, papers } })),
-    ...papers.map((paper) => ({ params: { slug: `${paperCategory(paper.data.category).path}/${paper.data.slug}` }, props: { paper } })),
   ];
 }
 
 interface Props {
-  paper?: CollectionEntry<"papers">;
   activePath?: string;
   title?: string;
   description?: string;
   papers?: CollectionEntry<"papers">[];
 }
 
-const { paper, activePath = "", title = "Photoacoustic Imaging", description, papers = [] } = Astro.props;
+const { activePath = "", title = "Paper Library", description, papers = [] } = Astro.props;
 const category = researchCategories.find((item) => item.path === activePath);
 ---
 
-<Layout title={`${paper?.data.title ?? title} | Ray_Lee’s Research Journal`} description={paper?.data.summary ?? description}>
-  {paper ? (paper.data.presentation ? <PaperPresentation paper={paper} /> : <PaperReport paper={paper} />) : (
+<Layout title={`${title} | Ray_Lee’s Research Journal`} description={description}>
     <div class="category-page">
-      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Photoacoustic Imaging</a><span aria-hidden="true">/</span>{category && <><a href={`/photoacoustic/${category.groupSlug}/`}>{category.groupTitle}</a><span aria-hidden="true">/</span></>}<span aria-current="page">{title}</span></nav>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/photoacoustic/">Paper Library</a><span aria-hidden="true">/</span>{category && <><a href={`/photoacoustic/${category.groupSlug}/`}>{category.groupTitle}</a><span aria-hidden="true">/</span></>}<span aria-current="page">{title}</span></nav>
       <header class="page-heading"><div><p class="eyebrow">{category ? category.groupTitle : "Collection"}</p><h1>{title}</h1>{description && <p class="lede">{description}</p>}</div></header>
       <LibraryExplorer mode="papers" papers={papers} activePath={activePath} heading="Papers" />
     </div>
-  )}
 </Layout>
 
 <style>

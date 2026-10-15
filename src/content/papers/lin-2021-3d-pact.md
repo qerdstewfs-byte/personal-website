@@ -4,7 +4,7 @@
   "title": "High-speed three-dimensional photoacoustic computed tomography for preclinical research and clinical translation",
   "category": "pact",
   "status": "published",
-  "summary": "以四条弧形阵列、1024 通道并行采集及旋转扫描，联合近端放大、几何标定和双声速重建，在大鼠脑与健康人乳腺展示可扩展的高速三维 PACT。",
+  "summary": "Four arc arrays and 1,024-channel parallel acquisition combine with rotational scanning, proximal amplification, geometric calibration and dual-speed-of-sound reconstruction for high-speed 3D PACT of rat brain and healthy human breast.",
   "journal": "Nature Communications",
   "year": 2021,
   "authors": [
@@ -25,7 +25,7 @@
     "Hemispherical detection",
     "1024 channels",
     "System integration",
-    "学习笔记"
+    "Reading notes"
   ],
   "updated": "2026-10-13",
   "downloads": {

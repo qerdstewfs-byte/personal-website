@@ -100,13 +100,12 @@ const papers = defineCollection({
     }).optional(),
   }).superRefine((data, context) => {
     if (data.status === "published") {
-      if (!data.problem?.trim()) context.addIssue({ code: "custom", path: ["problem"], message: "A published report needs a source-grounded research problem." });
-      if (!data.team) context.addIssue({ code: "custom", path: ["team"], message: "Verify the research team and provide its sources before publication." });
       for (const key of ["pdf", "notes"] as const) {
         if (!data.downloads[key]) context.addIssue({ code: "custom", path: ["downloads", key], message: "Both the original PDF and learning notes are required before publication." });
       }
-      for (const key of ["materials", "methods", "innovations", "results", "conclusions", "figures"] as const) {
-        if (!data[key].length) context.addIssue({ code: "custom", path: [key], message: `A published report needs ${key}. Save incomplete reports as draft.` });
+      // Reports are archived; only the English catalogue and source downloads are public.
+      for (const key of ["title", "summary", "journal", "authors", "tags"] as const) {
+        if (/\p{Script=Han}/u.test(String(data[key]))) context.addIssue({ code: "custom", path: [key], message: "Public catalogue text must be in English." });
       }
     }
     const ids = new Set<string>();
