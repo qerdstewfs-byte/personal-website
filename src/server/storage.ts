@@ -13,6 +13,13 @@ function options() {
   return token ? { token } : { storeId, oidcToken: env('VERCEL_OIDC_TOKEN') };
 }
 export function cloudConfigured() { return Boolean(env('BLOB_READ_WRITE_TOKEN') || env('BLOB_STORE_ID')); }
+// Report images stay in the same private store and deployment namespace.
+export async function writePrivateImage(path: string, bytes: Buffer, contentType: string) {
+  await put(`${prefix()}/${path}`, bytes, { access: 'private', addRandomSuffix: false, allowOverwrite: false, contentType, cacheControlMaxAge: 60, ...options() });
+}
+export async function readPrivateImage(path: string) {
+  return get(`${prefix()}/${path}`, { access: 'private', useCache: false, ...options() });
+}
 export async function readJson<T>(path: string): Promise<{ data: T; etag: string } | null> {
   const result = await get(`${prefix()}/${path}.json`, { access: 'private', useCache: false, ...options() });
   if (!result || result.statusCode !== 200) return null;
