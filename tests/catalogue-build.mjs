@@ -39,8 +39,12 @@ for (const filename of readdirSync(output, { recursive: true }).filter(name => n
   pageCount++;
 }
 const home = readFileSync(path.join(output, 'index.html'), 'utf8');
-const mainText = home.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1].replace(/<[^>]+>/g, '').trim();
-assert.equal(mainText, 'Current Work', 'The owner requested an empty Current Work page.');
+assert.match(home, /<h1\b[^>]*id="weeklyTitle"[^>]*>Weekly Reports<\/h1>/, 'Weekly Reports must replace the old homepage.');
+for (const id of ['weeklyReports', 'reportList', 'weeklyReportForm', 'reportPaper', 'newReport', 'saveReport', 'publishReport', 'unpublishReport', 'exportReport', 'editorAccessBtn']) {
+  assert.ok(home.includes(`id="${id}"`), `Missing weekly report capability: ${id}`);
+}
+assert.ok(!home.includes('Current Work') && !home.includes('current-work-title'), 'The old placeholder homepage must not remain visible.');
+assert.ok(!home.includes('贺礼') && !home.includes('PRIVATE draft'), 'Reference document text and private test data must never be embedded in the public shell.');
 
 // Execute the shipped filter logic against generated entry attributes. These
 // small event targets are test doubles; no browser or desktop session is used.
@@ -93,4 +97,4 @@ category.dispatch('change');
 assert.deepEqual(visible(), papers.filter(paper => paper.category === 'pam').map(paper => paper.slug).sort());
 reset.dispatch('click');
 assert.equal(visible().length, papers.length);
-console.log(`PASS: ${pageCount} English pages, ${papers.length} papers, source downloads, blank homepage, search and filters.`);
+console.log(`PASS: ${pageCount} English page shells, ${papers.length} papers, source downloads, Weekly Reports homepage controls, search and filters.`);

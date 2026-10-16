@@ -1,10 +1,18 @@
 # Content maintenance
 
-The public navigation is **Current Work / English Learning / Paper Library**. All visible webpage content is in English. Original PDFs and reading notes keep their supplied contents and language.
+The public navigation is **Weekly Reports / English Learning / Paper Library**. Navigation and library content remain English; weekly report templates and report content use Chinese. Original PDFs and reading notes keep their supplied contents and language.
 
-## Current Work
+## Weekly Reports
 
-The homepage reads `src/data/current-work.json`. Its `paragraphs` array is intentionally empty until the owner supplies a research update. Add the approved English paragraphs there and publish through the existing GitHub → Vercel workflow. There is no online editor and no sample research content.
+The homepage provides a report index and a paper-style editor. Unlock editing with the existing management password to access the initial private **周报一**. Its title, name, date, and all five writing areas start blank. Use **New report** to add the next numbered report; the sample document's author and research content are never prefilled.
+
+The template has four main sections: 现阶段工作主题; 本周工作总结及问题 (工作总结 and 遇到问题); 下周工作计划; 讨论结果. Each writing area accepts paragraphs, numbered lists, and uploaded PNG/JPEG images. Paste HTTP(S) URLs into text to create clickable links in previews and Word exports. Images can have captions and alternative text, with a 4 MB per-file limit and 20 images per report.
+
+**Save draft** saves only the owner's working copy. **Publish** creates a public snapshot. Further edits remain private until **Update publication** is used, and **Unpublish** removes public access to the report and its images. The server checks report revisions during conditional writes; conflicts preserve the local unsaved text rather than overwriting another device's version. Export or copy unsaved edits before choosing **Reload saved**.
+
+**Export Word** downloads a single editable `.docx`, including text, real numbered lists, hyperlinks, and embedded images. Owners can export their current draft; visitors can export published copies. Generation is lazy-loaded and runs in the browser, so the document is not constrained by a server response-size limit. The template preserves the supplied reference's A4 geometry and Chinese/English typography. The original reference file is not published or modified.
+
+Reports and images use the existing private Vercel Blob store, under a separate `weekly-reports/` path within each deployment's storage namespace. The `/api/reports` routes enforce the existing editor cookie, origin checks, bounded uploads, and draft/published visibility. Image responses are authorized against the published snapshot for visitors and use `private, no-store`, including after unpublication. No storage credentials or private Blob URLs are sent to the browser.
 
 ## Paper Library
 
@@ -42,16 +50,17 @@ The existing search, category filters, speaking/vocabulary filters, and `/englis
 
 ## Daily Journal preservation
 
-`src/lib/site-features.ts` sets `dailyJournal: false`. This hides the journal homepage, navigation label, and owner-editing controls. The journal component, calendar/checklist scripts, authentication and journal APIs, server storage code, and stored cloud records remain intact. Static pages make no session request while editing controls are hidden.
+`src/lib/site-features.ts` sets `dailyJournal: false` and enables weekly reports. This hides the journal homepage and navigation label. The journal component, calendar/checklist scripts, authentication and journal APIs, server storage code, and stored cloud records remain intact. Owner controls are shown on the weekly homepage; other static pages do not make session requests.
 
-To restore the journal when requested, set this flag to `true` and rebuild. It restores the original homepage and editing controls without a data migration. Update the homepage assertions in `tests/function-runtime.mjs` when deliberately changing the feature state. Do not delete or reset cloud records as part of a display change.
+To restore the journal when requested, set `dailyJournal` to `true` and rebuild. It restores the original homepage and editing controls without a data migration. Update the homepage assertions in the runtime tests when deliberately changing the feature state. Do not delete or reset cloud records as part of a display change. The earlier Current Work component/data also remain in source.
 
 ## Publication checks
 
 1. Verify the supplied content and metadata; retain incomplete entries as drafts.
 2. Run `npm test`, `npm run build`, and `npm run test:runtime`.
-3. Check the built public pages for English-only text, correct navigation, functioning search and filters, source downloads, and redirects from retired report URLs.
+3. Check the built library/English pages for English-only text, correct navigation, functioning search and filters, source downloads, and redirects from retired paper-report URLs.
 4. Publish through the existing GitHub → Vercel workflow, keeping `raylee123.vercel.app`.
-5. Verify the production homepage, library, redirects, and PDF downloads against the deployed commit.
+5. Verify the weekly report workflow in a disposable development storage namespace: login, save, reload, publish, private follow-up edits, image permissions, unpublish, and Word export. Never use production records for test content.
+6. Verify the production homepage, library, report access controls, redirects, and downloads against the deployed commit.
 
 Content fields are escaped rather than evaluated as HTML or scripts. Local asset URLs and HTTPS links are supported; embedded credentials, protocol-relative URLs, and traversal paths are rejected.

@@ -43,7 +43,7 @@ const password = document.querySelector<HTMLInputElement>('#managementPassword')
 const error = document.querySelector<HTMLElement>('#accessError');
 const unlock = document.querySelector<HTMLButtonElement>('#unlockBtn');
 let unsubscribePermissions: (() => void) | undefined;
-// Static library/work pages have no owner-editing controls or session request.
+// Owner controls are enabled only on pages that can edit saved content.
 if (access && dialog && form) {
   let editing = false;
   unsubscribePermissions = journalPermissions.subscribe(value => {
@@ -54,7 +54,7 @@ if (access && dialog && form) {
   });
   // The daily journal already returns permission state with its records.
   // Library pages still need a session read to update owner controls.
-  if (!document.getElementById('dailyBoard')) {
+  if (!document.getElementById('dailyBoard') && !document.getElementById('weeklyReports')) {
     const revision = journalPermissions.revision;
     fetch('/api/session', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(data => {
       if (data) journalPermissions.applyRead(Boolean(data.editing), revision, 'session');
@@ -62,10 +62,12 @@ if (access && dialog && form) {
   }
   access?.addEventListener('click', async () => {
     if (editing) {
+      const lockEvent = new CustomEvent('journal:before-lock', { cancelable: true });
+      if (!document.dispatchEvent(lockEvent)) return;
       access.disabled = true;
       const revision = journalPermissions.beginAction();
       try { const response = await fetch('/api/session', { method: 'DELETE' }); if (!response.ok) throw new Error(); journalPermissions.finishAction(false, revision); }
-      catch { access.textContent = 'Could not lock — retry'; }
+      catch { access.textContent = 'Could not lock — retry'; document.dispatchEvent(new CustomEvent('journal:lock-failed')); }
       finally { access.disabled = false; }
     } else { if (error) error.textContent = ''; dialog?.showModal(); password?.focus(); }
   });
