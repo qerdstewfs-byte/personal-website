@@ -1,1 +1,0 @@
-This directory contains only the user's real speaking materials and vocabulary. Files beginning with an underscore are excluded from the content collection. See docs/content-guide.md. No sample learning records are published.

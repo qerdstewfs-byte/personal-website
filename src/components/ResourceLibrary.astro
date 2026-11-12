@@ -1,0 +1,115 @@
+---
+import resources from '../data/resources.json';
+interface Props { category?: string }
+const { category } = Astro.props;
+const files = category ? resources.filter(file => file.category === category) : resources;
+const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+const formatSize = (size: number) => (size / 1024 / 1024).toFixed(1) + ' MB';
+---
+<section class="resource-library">
+  <header class="page-heading">
+    <div>
+      <h1>{category ? 'PPT 演示文稿' : '开放资料仓库'}</h1>
+      <p class="lede">{category ? '科研汇报与演示文稿，可直接下载原文件。' : '收录与分享研究资料，按分类查找，随时下载。'}</p>
+    </div>
+    <span class="page-count">{files.length} 个文件 · {formatSize(totalSize)}</span>
+  </header>
+  <div class="library-layout">
+    <aside class="category-panel" aria-label="文件分类">
+      <h2>分类</h2>
+      <a href="/" class:list={['category-link', { selected: !category }]} aria-current={!category ? 'page' : undefined}>
+        <span>全部资料</span><span class="category-count">{resources.length}</span>
+      </a>
+      <a href="/ppt/" class:list={['category-link', { selected: category === 'PPT' }]} aria-current={category === 'PPT' ? 'page' : undefined}>
+        <span>PPT</span><span class="category-count">{resources.filter(file => file.category === 'PPT').length}</span>
+      </a>
+    </aside>
+    <div class="file-panel">
+      <div class="search-toolbar" id="searchToolbar" hidden>
+        <div class="search-field">
+          <label class="sr-only" for="resourceSearch">搜索文件名称、主题或关键词</label>
+          <input id="resourceSearch" type="search" placeholder="搜索文件名称、主题或关键词" autocomplete="off" />
+          <button id="clearSearch" class="clear-search" type="button" aria-label="清空搜索" hidden>×</button>
+        </div>
+        <span id="resultCount" class="result-count" role="status" aria-live="polite">{files.length} 个文件</span>
+      </div>
+      <ul class="file-list" id="fileList">
+        {files.map(file => (
+          <li class="file-card" data-search={[file.title, file.description, file.category, ...file.tags].join(' ')}>
+            <div class="file-format" aria-hidden="true">PPT</div>
+            <div class="file-content">
+              <div class="file-heading">
+                <div>
+                  <a class="file-category" href="/ppt/">{file.category}</a>
+                  <h2>{file.title}</h2>
+                </div>
+                <a class="filled-btn download-button" href={file.url} download={file.filename} aria-label={'下载 ' + file.title + '，PPTX 文件'}>下载 PPTX <span aria-hidden="true">↓</span></a>
+              </div>
+              <p class="file-description">{file.description}</p>
+              <div class="file-metadata"><span>PPTX</span><span>{file.pages} 页</span><span>{formatSize(file.size)}</span></div>
+              <ul class="file-tags" aria-label="主题">{file.tags.map(tag => <li>{tag}</li>)}</ul>
+              <details class="file-details">
+                <summary>文件信息</summary>
+                <dl>
+                  <div><dt>文件名</dt><dd>{file.filename}</dd></div>
+                  <div><dt>文件大小</dt><dd>{file.size.toLocaleString('zh-CN')} 字节</dd></div>
+                  <div><dt>SHA-256</dt><dd class="checksum">{file.sha256}</dd></div>
+                </dl>
+              </details>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div id="emptyState" class="empty-state" hidden>
+        <h2>没有找到匹配的文件</h2>
+        <p>试试“光声”“GPU”或“PPT”。</p>
+        <button class="subtle-btn" id="resetSearch" type="button">显示全部文件</button>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="../scripts/resources.ts"></script>
+<style>
+.library-layout { display:grid; grid-template-columns:200px minmax(0,1fr); gap:32px; align-items:start; margin-top:10px; }
+.category-panel { padding:22px 0; border-top:1px solid var(--line-strong); }
+.category-panel h2 { margin:0 0 18px; font-family:var(--sans); font-size:13px; font-weight:600; color:var(--dim); }
+.category-link { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; margin:4px 0; border-radius:7px; text-decoration:none; font-size:14px; color:var(--muted); }
+.category-link:hover { background:var(--surface-2); }
+.category-link.selected { color:var(--primary); background:var(--primary-soft); font-weight:600; }
+.category-count { font-family:var(--mono); font-size:12px; }
+.search-toolbar { display:flex; align-items:center; gap:20px; margin-bottom:20px; }
+.search-field { display:flex; align-items:center; flex:1; min-width:0; border:1px solid var(--line-strong); border-radius:8px; background:var(--surface); }
+.search-field:focus-within { outline:2px solid var(--primary); outline-offset:2px; }
+.search-field input { border:0; border-radius:8px; background:transparent; color:var(--text); padding:12px 15px; width:100%; min-width:0; font-size:15px; outline:none; }
+.search-field input::-webkit-search-cancel-button { display:none; }
+.search-field input::placeholder { color:var(--dim); }
+.clear-search { border:0; background:transparent; color:var(--muted); width:44px; min-height:44px; flex-shrink:0; font-size:22px; }
+.result-count { font-size:12px; color:var(--dim); white-space:nowrap; font-family:var(--mono); }
+.file-list,.file-tags { list-style:none; padding:0; margin:0; }
+.file-card { display:flex; gap:22px; padding:28px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+.file-format { width:64px; height:80px; flex-shrink:0; display:grid; place-items:center; color:var(--primary); background:var(--primary-soft); border:1px solid var(--line); border-radius:5px 16px 5px 5px; font-family:var(--mono); font-size:16px; font-weight:600; letter-spacing:.04em; }
+.file-content { flex:1; min-width:0; }
+.file-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:24px; }
+.file-category { display:inline-block; margin-bottom:9px; color:var(--primary); font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-decoration:none; }
+.file-category:hover { text-decoration:underline; }
+.file-heading h2 { margin:0; max-width:600px; font-family:var(--sans); font-size:22px; font-weight:600; line-height:1.55; letter-spacing:0; text-wrap:wrap; }
+.download-button { white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.download-button span { margin-left:2px; font-size:18px; }
+.file-description { margin:14px 0; color:var(--muted); font-size:14px; line-height:1.8; }
+.file-metadata { display:flex; flex-wrap:wrap; gap:0; color:var(--dim); font-family:var(--mono); font-size:12px; }
+.file-metadata span + span::before { content:'·'; display:inline-block; margin:0 12px; }
+.file-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.file-tags li { border:1px solid var(--line); border-radius:4px; padding:3px 9px; color:var(--muted); font-size:11px; }
+.file-details { margin-top:24px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--dim); }
+.file-details summary { cursor:pointer; width:fit-content; }
+.file-details dl { margin:14px 0 0; }
+.file-details dl div { display:grid; grid-template-columns:76px minmax(0,1fr); gap:10px; margin-top:10px; }
+.file-details dd { margin:0; overflow-wrap:anywhere; color:var(--muted); }
+.checksum { font-family:var(--mono); font-size:10px; }
+.empty-state { text-align:center; padding:60px 24px; border:1px dashed var(--line-strong); border-radius:var(--radius); }
+.empty-state h2 { font-family:var(--sans); font-size:20px; font-weight:500; }
+.empty-state p { color:var(--muted); font-size:14px; margin-bottom:22px; }
+@media(max-width:1000px) { .library-layout { grid-template-columns:155px minmax(0,1fr); gap:24px; } .file-format { display:none; } .file-card { padding:24px; } }
+@media(max-width:760px) { .library-layout { grid-template-columns:minmax(0,1fr); gap:20px; } .category-panel { display:flex; gap:10px; padding:14px 0 0; } .category-panel h2 { display:none; } .category-link { gap:24px; margin:0; padding:10px 14px; } .file-heading { flex-direction:column; gap:16px; } .file-heading h2 { font-size:21px; } .download-button { min-height:44px; } .file-card { padding:22px; } .search-toolbar { gap:12px; } }
+@media(max-width:420px) { .file-card { padding:20px; } .search-field input { font-size:13px; padding-inline:12px; } .result-count { font-size:11px; } .file-details dl div { grid-template-columns:minmax(0,1fr); gap:3px; } }
+</style>

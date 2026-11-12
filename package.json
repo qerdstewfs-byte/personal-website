@@ -1,5 +1,5 @@
 {
-  "name": "ray-lee-research-journal",
+  "name": "ray-lee-open-library",
   "type": "module",
   "version": "0.1.0",
   "private": true,
@@ -15,8 +15,7 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "test": "node --test tests/*.test.mjs",
-    "test:runtime": "node tests/function-runtime.mjs"
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "11.0.13",

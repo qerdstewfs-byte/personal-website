@@ -1,10 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import DailyBoard from '../components/DailyBoard.astro';
-import WeeklyReports from '../components/WeeklyReports.astro';
-import { siteFeatures } from '../lib/site-features';
-export const prerender = true;
+import ResourceLibrary from '../components/ResourceLibrary.astro';
 ---
-<Layout title={`${siteFeatures.dailyJournal ? 'Daily Journal' : 'Weekly Reports'} · Ray_Lee’s Research Journal`} description={siteFeatures.dailyJournal ? 'Daily research records and a full-year calendar in Beijing time.' : 'Weekly research reports by Ray_Lee.'}>
-  {siteFeatures.dailyJournal ? <DailyBoard /> : <WeeklyReports />}
+<Layout title="开放资料仓库 · Ray_Lee">
+  <ResourceLibrary />
 </Layout>

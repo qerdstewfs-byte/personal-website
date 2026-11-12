@@ -1,0 +1,18 @@
+[
+  {
+    "title": "GPU 加速三维拼接光声显微镜与肿瘤血管生长定量",
+    "category": "PPT",
+    "description": "围绕 GPU 加速、三维拼接光声显微成像与肿瘤血管生长定量的论文汇报。",
+    "tags": [
+      "光声显微成像",
+      "GPU 加速",
+      "三维拼接",
+      "肿瘤血管"
+    ],
+    "url": "/files/ppt/gpu-volumetric-mosaic-pam.pptx",
+    "filename": "GPU 加速三维拼接光声显微镜与肿瘤血管生长定量 (4).pptx",
+    "size": 30503157,
+    "pages": 22,
+    "sha256": "986a5b868b9fd2f7bb8efd1ed2aaa89fabb0d529361e9549ecc023ccd989ac21"
+  }
+]

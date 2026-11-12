@@ -1,5 +1,4 @@
 import { beijingClock, untilNextMinute } from '../lib/journal-dates';
-import { journalPermissions } from '../lib/permissions';
 
 const themeButton = document.querySelector<HTMLButtonElement>('#themeBtn');
 function themeIcon() {
@@ -36,56 +35,8 @@ function clock() {
 }
 clock();
 document.addEventListener('visibilitychange', clock);
-const access = document.querySelector<HTMLButtonElement>('#editorAccessBtn');
-const dialog = document.querySelector<HTMLDialogElement>('#editorAccessDialog');
-const form = document.querySelector<HTMLFormElement>('#editorAccessForm');
-const password = document.querySelector<HTMLInputElement>('#managementPassword');
-const error = document.querySelector<HTMLElement>('#accessError');
-const unlock = document.querySelector<HTMLButtonElement>('#unlockBtn');
-let unsubscribePermissions: (() => void) | undefined;
-// Owner controls are enabled only on pages that can edit saved content.
-if (access && dialog && form) {
-  let editing = false;
-  unsubscribePermissions = journalPermissions.subscribe(value => {
-    editing = value.editing;
-    if (access) { access.textContent = editing ? 'Lock editing' : 'Unlock editing'; access.title = access.textContent; }
-    const status = document.querySelector<HTMLElement>('#accessStatus');
-    if (status) { status.textContent = editing ? 'Editing' : 'View only'; status.dataset.editing = String(editing); }
-  });
-  // The daily journal already returns permission state with its records.
-  // Library pages still need a session read to update owner controls.
-  if (!document.getElementById('dailyBoard') && !document.getElementById('weeklyReports')) {
-    const revision = journalPermissions.revision;
-    fetch('/api/session', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(data => {
-      if (data) journalPermissions.applyRead(Boolean(data.editing), revision, 'session');
-    }).catch(() => {});
-  }
-  access?.addEventListener('click', async () => {
-    if (editing) {
-      const lockEvent = new CustomEvent('journal:before-lock', { cancelable: true });
-      if (!document.dispatchEvent(lockEvent)) return;
-      access.disabled = true;
-      const revision = journalPermissions.beginAction();
-      try { const response = await fetch('/api/session', { method: 'DELETE' }); if (!response.ok) throw new Error(); journalPermissions.finishAction(false, revision); }
-      catch { access.textContent = 'Could not lock — retry'; document.dispatchEvent(new CustomEvent('journal:lock-failed')); }
-      finally { access.disabled = false; }
-    } else { if (error) error.textContent = ''; dialog?.showModal(); password?.focus(); }
-  });
-  document.querySelector('#closeAccess')?.addEventListener('click', () => dialog?.close());
-  form?.addEventListener('submit', async event => {
-    event.preventDefault(); if (!password || !unlock || !error) return;
-    unlock.disabled = true; error.textContent = '';
-    const revision = journalPermissions.beginAction();
-    try {
-      const response = await fetch('/api/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) });
-      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not unlock editing.');
-      password.value = ''; journalPermissions.finishAction(true, revision); dialog?.close();
-    } catch (e) { error.textContent = e instanceof Error ? e.message : 'Connection unavailable. Please retry.'; }
-    finally { unlock.disabled = false; }
-  });
-}
+
 document.addEventListener('astro:before-swap', () => {
   clearTimeout(clockTimer);
   document.removeEventListener('visibilitychange', clock);
-  unsubscribePermissions?.();
 }, { once: true });
